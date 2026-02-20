@@ -14,7 +14,7 @@ let status = [
   {
     name: "version",
     type: ActivityType.Custom,
-    state: "🗒️ Version 0.1.4",
+    state: "🗒️ Version 1.0.0",
   },
   // {
   //   name: "iamfabriceg.xyz",
@@ -40,7 +40,7 @@ module.exports = {
   once: true,
   execute(client) {
     // console.log(`✅ Ready! Logged in as ${readyClient.user.tag}`);
-    
+
     setInterval(() => {
       let random = Math.floor(Math.random() * status.length);
       client.user.setActivity(status[random]);
@@ -48,7 +48,7 @@ module.exports = {
 
     console.log(status);
 
-    console.log(`✅ Ready! Logged in as ${client.user.tag}`);
+    console.log(`✅ Ready ! Logged in as ${client.user.tag}`);
   },
 };
 
