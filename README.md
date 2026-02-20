@@ -6,6 +6,11 @@ Add the bot (administrator permission) on your discord server with this [link](h
 
 https://discord.com/oauth2/authorize?client_id=580073418968530973&permissions=8&scope=bot+applications.commands
 
+## invit
+
+https://discord.com/api/oauth2/authorize?client_id=VOTRE_CLIENT_ID&permissions=52288&scope=bot%20applications.commands
+https://discord.com/api/oauth2/authorize?client_id=580073418968530973&permissions=52288&scope=bot%20applications.commands
+
 ## install
 
 ```bash
