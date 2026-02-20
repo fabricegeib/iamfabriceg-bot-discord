@@ -1,0 +1,14 @@
+name: iamfabriceg
+
+services:
+  iamfabriceg-bot-discord:
+    image: node:22-alpine  # Version plus récente pour discord.js 14
+    container_name: iamfabriceg-bot-discord
+    env_file:
+      - .env
+    working_dir: /home/node/app
+    volumes:
+      - ./:/home/node/app
+      - /home/node/app/node_modules  # Évite les conflits entre host et container
+    command: sh -c "npm install && npm start"
+    restart: unless-stopped  # Meilleur que always pour le dev

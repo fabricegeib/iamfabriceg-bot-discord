@@ -1,4 +1,4 @@
-# iamfabricegBot (Discord Bot)
+# iamfabricegBot (Bot Discord)
 
 A discord bot for [iamfabriceg.xyz](https://iamfabriceg.xyz) made by [Fabrice Geib](https://fabricegeib.com) with [comfy.js](https://github.com/instafluff/ComfyJS) and [discord.js](https://discord.js.org/#/)
 
@@ -6,9 +6,23 @@ Add the bot (administrator permission) on your discord server with this [link](h
 
 https://discord.com/oauth2/authorize?client_id=580073418968530973&permissions=8&scope=bot+applications.commands
 
-https://discordjs.guide/
+## install
 
-https://discord.com/developers/applications
+```bash
+gh repo clone iamfabriceg-bot-discord
+```
+
+## deploy commands
+
+```bash
+docker exec iamfabriceg-bot-discord npm run deploy
+```
+
+## start
+
+```bash
+docker-compose up -d
+```
 
 ## Commands :
 
@@ -111,9 +125,10 @@ pm2 start index.js --watch --name discord
 
 ## Resources
 
+- https://discordapp.com/developers/applications/
 - https://discord.com/developers/applications
 - https://discordapp.com/developers/docs/intro
-- https://discordapp.com/developers/applications/
+- https://docs.discord.com/developers/intro
 
 - https://discord.js.org/
 - https://discordjs.guide/
@@ -127,10 +142,16 @@ pm2 start index.js --watch --name discord
 - https://www.fortnite.com/news/fortnite-save-the-world-update-state-of-development?lang=en-US
 - https://pokemongolive.com/?hl=en
 - https://www.pokemon.com/us/pokedex/mew
+- https://redeem.ubisoft.com/xdefiant/fr-FR
 <!-- https://skidip.team -->
 
 - https://support.discord.com/hc/fr/articles/6156116949911-B%C3%AAta-de-l-Accueil-de-Serveur
 - https://discord.com/developers/docs/intro
+- https://sac.epicgames.com/fr/overview
+- https://www.indy.fr/prix/
+- https://dev.epicgames.com/community/fortnite/getting-started/creative?lang=fr
+- https://github.com/msx752/FTN-Power
+- https://github.com/AnIdiotsGuide/discordjs-bot-guide/blob/master/frequently-asked-questions.md
 
 ---
 
@@ -147,7 +168,6 @@ pm2 start index.js --watch --name discord
 - uTip
 
 - jeux :
-
   - among us
   - brawlhalla
   - fall guys

@@ -103,4 +103,34 @@ const loadAllEvents = (dirPath) => {
 // Load all events from the events directory
 loadAllEvents(path.join(__dirname, "events"));
 
+// // Gestionnaire d'interactions pour les commandes slash
+// client.on('interactionCreate', async interaction => {
+//   if (!interaction.isChatInputCommand()) return;
+
+//   const command = client.commands.get(interaction.commandName);
+
+//   if (!command) {
+//     console.error(`Commande ${interaction.commandName} introuvable.`);
+//     return;
+//   }
+
+//   try {
+//     await command.execute(interaction);
+//   } catch (error) {
+//     console.error(`Erreur lors de l'exécution de ${interaction.commandName}:`, error);
+
+//     if (interaction.replied || interaction.deferred) {
+//       await interaction.followUp({
+//         content: 'Une erreur est survenue!',
+//         ephemeral: true
+//       });
+//     } else {
+//       await interaction.reply({
+//         content: 'Une erreur est survenue!',
+//         ephemeral: true
+//       });
+//     }
+//   }
+// });
+
 client.login(process.env.DISCORD_TOKEN);

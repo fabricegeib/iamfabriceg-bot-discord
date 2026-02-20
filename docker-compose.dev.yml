@@ -1,8 +1,9 @@
-name: iamfabriceg-discord-bot
+name: iamfabriceg
 
 services:
   discord-bot:
     image: node:18-alpine
+    # 22.12.0 for discord.js v14.25.1
     container_name: iamfabriceg-discord-bot
     # build: .
     # environment:
