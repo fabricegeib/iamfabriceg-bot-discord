@@ -1,12 +1,7 @@
-const { Events } = require("discord.js");
-
-module.exports = {
-	name: Events.InteractionCreate,
-	async execute(interaction) {
-		if (!interaction.isStringSelectMenu()) return;
-
-		// Gérer le menu de sélection des Pokémon
-		if (interaction.customId === 'starter') {
+module.exports = async (interaction) => {
+	// Gérer le menu de sélection des Pokémon
+	if (interaction.customId === 'starter') {
+		try {
 			const selected = interaction.values[0];
 
 			const pokemonData = {
@@ -39,6 +34,20 @@ module.exports = {
 				content: `${pokemon.emoji} **${pokemon.name}** #${pokemon.number}\n**Type:** ${pokemon.type}\n\n*${pokemon.description}*`,
 				ephemeral: true
 			});
+
+			console.log(`✅ ${interaction.user.tag} a choisi ${pokemon.name}`);
+		} catch (error) {
+			console.error('❌ Erreur menu Pokemon:', error);
+
+			if (!interaction.replied && !interaction.deferred) {
+				await interaction.reply({
+					content: 'Une erreur est survenue lors de la sélection du Pokémon!',
+					ephemeral: true
+				});
+			}
 		}
-	},
+	}
+
+	// Vous pouvez ajouter d'autres menus ici
+	// if (interaction.customId === 'autre-menu') { ... }
 };

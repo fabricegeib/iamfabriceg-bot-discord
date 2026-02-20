@@ -1,34 +1,16 @@
 const { Events } = require("discord.js");
+const commandHandler = require("../handlers/commandHandler");
+const selectMenuHandler = require("../handlers/selectMenuHandler");
 
 module.exports = {
 	name: Events.InteractionCreate,
 	async execute(interaction) {
-		// On gère SEULEMENT les commandes slash ici
-		if (!interaction.isChatInputCommand()) return; // ← Important !
-
-		const command = interaction.client.commands.get(interaction.commandName);
-
-		if (!command) {
-			console.error(`❌ Commande ${interaction.commandName} introuvable.`);
-			return;
+		if (interaction.isChatInputCommand()) {
+			await commandHandler(interaction);
 		}
 
-		try {
-			await command.execute(interaction);
-			console.log(`✅ ${interaction.user.tag} a utilisé /${interaction.commandName}`);
-		} catch (error) {
-			console.error(`❌ Erreur lors de l'exécution de ${interaction.commandName}:`, error);
-
-			const errorMessage = {
-				content: 'Une erreur est survenue lors de l\'exécution de cette commande!',
-				ephemeral: true
-			};
-
-			if (interaction.replied || interaction.deferred) {
-				await interaction.followUp(errorMessage);
-			} else {
-				await interaction.reply(errorMessage);
-			}
+		if (interaction.isStringSelectMenu()) {
+			await selectMenuHandler(interaction);
 		}
 	},
 };
