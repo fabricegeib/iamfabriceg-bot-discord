@@ -1,6 +1,6 @@
 const { Events } = require("discord.js");
-const commandHandler = require("../handlers/commandHandler");
-const selectMenuHandler = require("../handlers/selectMenuHandler");
+const commandHandler = require("../../handlers/commandHandler");
+const selectMenuHandler = require("../../handlers/selectMenuHandler");
 
 module.exports = {
 	name: Events.InteractionCreate,
