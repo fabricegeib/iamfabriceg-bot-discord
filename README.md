@@ -24,6 +24,19 @@ docker exec iamfabriceg-bot-discord npm run deploy
 docker-compose up -d
 ```
 
+## advanced
+
+```bash
+# Déployer les commandes
+docker compose run --rm bot-tasks npm run deploy
+
+# Envoyer les rôles
+docker compose run --rm bot-tasks npm run send:roles
+
+# Lancer le bot normalement
+docker compose up -d iamfabriceg-bot-discord
+```
+
 ## Commands :
 
 ```
