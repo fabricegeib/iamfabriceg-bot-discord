@@ -6,8 +6,29 @@ Add the bot (administrator permission) on your discord server with this [link](h
 
 https://discord.com/oauth2/authorize?client_id=580073418968530973&permissions=8&scope=bot+applications.commands
 
-## invit
+## invitation link and permissions
 
+```javascript
+const { PermissionFlagsBits } = require('discord.js');
+
+const permissions = 
+  PermissionFlagsBits.ViewChannel |           // Voir les salons
+  PermissionFlagsBits.SendMessages |          // Envoyer des messages
+  PermissionFlagsBits.SendMessagesInThreads | // Messages dans les fils
+  PermissionFlagsBits.EmbedLinks |            // Liens intégrés
+  PermissionFlagsBits.AttachFiles |           // Joindre des fichiers
+  PermissionFlagsBits.ReadMessageHistory |    // Lire l'historique
+  PermissionFlagsBits.AddReactions |          // Ajouter des réactions
+  PermissionFlagsBits.UseExternalEmojis |     // Emojis externes
+  PermissionFlagsBits.UseApplicationCommands; // Commandes slash
+
+// Résultat: 277025508352
+```
+
+✅ **Nouvelle invitation sécurisée :**
+https://discord.com/api/oauth2/authorize?client_id=580073418968530973&permissions=277025508352&scope=bot%20applications.commands
+
+⚠️ **Anciennes invitations (ne plus utiliser) :**
 https://discord.com/api/oauth2/authorize?client_id=VOTRE_CLIENT_ID&permissions=52288&scope=bot%20applications.commands
 https://discord.com/api/oauth2/authorize?client_id=580073418968530973&permissions=52288&scope=bot%20applications.commands
 
