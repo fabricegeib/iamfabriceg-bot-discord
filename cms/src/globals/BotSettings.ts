@@ -10,7 +10,7 @@ export const BotSettings: GlobalConfig = {
     update: isAdminOrEditor,
   },
   fields: [
-    { name: 'botName', type: 'text', required: true, defaultValue: 'IamFabriceG Bot' },
+    { name: 'botName', type: 'text', required: true, defaultValue: 'iamfabriceg Bot' },
     { name: 'description', type: 'textarea' },
     { name: 'version', type: 'text', defaultValue: '1.0.0' },
     { name: 'publicUrl', type: 'text' },

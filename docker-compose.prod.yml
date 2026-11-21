@@ -1,4 +1,4 @@
-name: iamfabriceg
+name: iamfabriceg-bot
 
 # Production : images construites depuis les Dockerfiles, redémarrage automatique.
 # Démarrage : pnpm docker:prod  (ou docker compose -f docker-compose.prod.yml up -d --build)
@@ -6,10 +6,10 @@ name: iamfabriceg
 services:
   mongo:
     image: mongo:8
-    container_name: iamfabriceg-mongo
+    container_name: iamfabriceg-bot-mongo
     restart: unless-stopped
     volumes:
-      - mongo-data:/data/db
+      - iamfabriceg-bot-mongo-data:/data/db
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 10s
@@ -21,8 +21,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: iamfabriceg/bot:latest
-    container_name: iamfabriceg-discord-bot
+    image: iamfabriceg/bot-discord:latest
+    container_name: iamfabriceg-bot-discord
     depends_on:
       mongo:
         condition: service_healthy
@@ -33,7 +33,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
-      DATABASE_URI: mongodb://mongo:27017/iamfabriceg
+      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
       PAYLOAD_URL: http://cms:3001
       BOT_WEBHOOK_URL: http://bot:3000
     ports:
@@ -50,8 +50,8 @@ services:
     build:
       context: .
       dockerfile: cms/Dockerfile
-    image: iamfabriceg/cms:latest
-    container_name: iamfabriceg-cms
+    image: iamfabriceg/bot-cms:latest
+    container_name: iamfabriceg-bot-cms
     depends_on:
       mongo:
         condition: service_healthy
@@ -61,7 +61,7 @@ services:
       NODE_ENV: production
       PORT: "3001"
       CMS_PORT: "3001"
-      DATABASE_URI: mongodb://mongo:27017/iamfabriceg
+      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
       PAYLOAD_URL: http://cms:3001
       BOT_WEBHOOK_URL: http://bot:3000
     ports:
@@ -75,4 +75,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  mongo-data:
+  iamfabriceg-bot-mongo-data:

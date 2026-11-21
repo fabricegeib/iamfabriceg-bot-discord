@@ -1,12 +1,13 @@
-# iamfabricegBot — Discord
+# iamfabriceg Bot
 
-Bot Discord personnel pour [iamfabriceg.xyz](https://iamfabriceg.xyz), écrit en **CommonJS** avec **discord.js 14**.
+Bot Discord personnel de [iamfabriceg](https://iamfabriceg.xyz), écrit en **CommonJS** avec **discord.js 14**.
 
 > Version modernisée (novembre 2026) : Node 26, pnpm, Docker dev/prod, interactions slash, APIs externes,
 > catalogue de 17 jeux, **Payload CMS v3 + MongoDB** (admin complet + front public), Twitch EventSub,
 > modération et monitoring.
 >
-> Voir [`PLAN.md`](./PLAN.md), [`docs/PAYLOAD.md`](./docs/PAYLOAD.md), [`docs/CMS.md`](./docs/CMS.md) et [`docs/TWITCH.md`](./docs/TWITCH.md).
+> Voir [`docs/NOMENCLATURE.md`](./docs/NOMENCLATURE.md) pour le nommage, [`PLAN.md`](./PLAN.md) pour le plan,
+> et [`docs/PAYLOAD.md`](./docs/PAYLOAD.md), [`docs/CMS.md`](./docs/CMS.md), [`docs/TWITCH.md`](./docs/TWITCH.md) pour les intégrations.
 
 ## ⚠️ Contraintes en vigueur
 
@@ -33,7 +34,7 @@ corepack pnpm cms:dev         # CMS (port 3001) — dans un second terminal
 corepack pnpm send:roles
 ```
 
-MongoDB doit être accessible sur `mongodb://127.0.0.1:27017/iamfabriceg` (fourni par `pnpm docker:dev`).
+MongoDB doit être accessible sur `mongodb://127.0.0.1:27017/iamfabriceg_bot` (fourni par `pnpm docker:dev`).
 
 Déploiement global des commandes (prod, propagation jusqu'à 1 h) :
 
@@ -65,7 +66,7 @@ corepack pnpm docker:prod
 # ou : docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-Les images `iamfabriceg/bot:latest` et `iamfabriceg/cms:latest` sont construites depuis `Dockerfile` et
+Les images `iamfabriceg/bot-discord:latest` et `iamfabriceg/bot-cms:latest` sont construites depuis `Dockerfile` et
 `cms/Dockerfile`. Le bot attend que le CMS et MongoDB soient `healthy`. Arrêt : `corepack pnpm docker:prod:down`.
 
 ## CMS Payload v3
@@ -86,7 +87,7 @@ Détails : [`docs/CMS.md`](./docs/CMS.md).
 Variables principales :
 
 ```env
-DATABASE_URI=mongodb://127.0.0.1:27017/iamfabriceg
+DATABASE_URI=mongodb://127.0.0.1:27017/iamfabriceg_bot
 PAYLOAD_SECRET=<openssl rand -hex 32>
 PAYLOAD_URL=http://127.0.0.1:3001
 PAYLOAD_API_KEY=<générée par pnpm cms:seed>

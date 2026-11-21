@@ -6,7 +6,7 @@ import { getPayload } from 'payload'
 
 import config from './payload.config'
 
-const BOT_EMAIL = 'bot@fabrice.local'
+const BOT_EMAIL = 'bot@iamfabriceg.local'
 const BOT_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'Admin1234!'
 
 type SeedDoc = Record<string, any>
@@ -248,7 +248,7 @@ async function seedSettings(payload: any) {
   await payload.updateGlobal({
     slug: 'botSettings',
     data: {
-      botName: 'IamFabriceG Bot',
+      botName: 'iamfabriceg Bot',
       description: 'Bot Discord multijeux avec catalogue Payload CMS.',
       version: '1.0.0',
       publicUrl: process.env.PUBLIC_URL || 'http://localhost:3001',

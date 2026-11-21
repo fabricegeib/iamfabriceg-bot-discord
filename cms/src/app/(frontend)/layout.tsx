@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import '../globals.css'
 
 export const metadata: Metadata = {
-  title: 'IamFabriceG — Bot Discord',
+  title: 'iamfabriceg Bot',
   description: 'Catalogue public des jeux, commandes et actualités du bot Discord.',
 }
 

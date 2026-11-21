@@ -45,7 +45,7 @@ export default buildConfig({
   globals: [BotSettings],
   editor: lexicalEditor(),
   db: mongooseAdapter({
-    url: process.env.DATABASE_URI || 'mongodb://127.0.0.1:27017/iamfabriceg',
+    url: process.env.DATABASE_URI || 'mongodb://127.0.0.1:27017/iamfabriceg_bot',
   }),
   secret: process.env.PAYLOAD_SECRET || 'dev-secret-change-me',
   serverURL: process.env.PAYLOAD_URL || 'http://localhost:3001',

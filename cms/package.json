@@ -2,7 +2,7 @@
   "name": "cms",
   "version": "1.0.0",
   "private": true,
-  "description": "Payload CMS v3 pour le bot Discord iamfabriceg",
+  "description": "Payload CMS v3 pour iamfabriceg Bot (Discord)",
   "type": "module",
   "scripts": {
     "dev": "next dev --port 3001",

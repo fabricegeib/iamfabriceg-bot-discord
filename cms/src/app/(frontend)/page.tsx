@@ -55,7 +55,7 @@ export default async function HomePage() {
           <header className="hero">
             <div>
               <p className="eyebrow">Discord Bot · CMS</p>
-              <h1>{settingsDoc.botName || 'IamFabriceG Bot'}</h1>
+              <h1>{settingsDoc.botName || 'iamfabriceg Bot'}</h1>
               <p className="lead">
                 {settingsDoc.description ||
                   'Catalogue des jeux, commandes et actualités du bot Discord.'}

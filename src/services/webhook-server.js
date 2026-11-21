@@ -73,7 +73,7 @@ function createWebhookServer({ port = 3000, secret = "", twitchSecret = "", onEv
     }
 
     if (req.method === "GET" && url.pathname === "/") {
-      return json(res, 200, { service: "iamfabriceg-discord-bot", endpoints: ["/healthz", "/webhooks/payload", "/webhooks/twitch"] });
+      return json(res, 200, { service: "iamfabriceg-bot", endpoints: ["/healthz", "/webhooks/payload", "/webhooks/twitch"] });
     }
 
     if (req.method === "POST" && url.pathname === "/webhooks/payload") {

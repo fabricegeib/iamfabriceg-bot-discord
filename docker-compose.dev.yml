@@ -1,4 +1,4 @@
-name: iamfabriceg
+name: iamfabriceg-bot
 
 # Développement : code monté depuis l'hôte, pnpm installé dans chaque conteneur.
 # Démarrage : pnpm docker:dev  (ou docker compose -f docker-compose.dev.yml up -d)
@@ -6,12 +6,12 @@ name: iamfabriceg
 services:
   mongo:
     image: mongo:8
-    container_name: iamfabriceg-mongo
+    container_name: iamfabriceg-bot-mongo
     restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
-      - mongo-data:/data/db
+      - iamfabriceg-bot-mongo-data:/data/db
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 10s
@@ -21,7 +21,7 @@ services:
 
   bot:
     image: node:26-alpine
-    container_name: iamfabriceg-discord-bot
+    container_name: iamfabriceg-bot-discord
     depends_on:
       mongo:
         condition: service_healthy
@@ -30,13 +30,13 @@ services:
     environment:
       NODE_ENV: development
       PORT: "3000"
-      DATABASE_URI: mongodb://mongo:27017/iamfabriceg
+      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
       PAYLOAD_URL: http://cms:3001
       BOT_WEBHOOK_URL: http://bot:3000
     working_dir: /app
     volumes:
       - ./:/app
-      - bot-node-modules:/app/node_modules
+      - iamfabriceg-bot-node-modules:/app/node_modules
     command: >-
       sh -c "corepack enable && corepack prepare pnpm@10.15.0 --activate &&
       pnpm install --frozen-lockfile --filter iamfabriceg-bot-discord... &&
@@ -53,7 +53,7 @@ services:
 
   cms:
     image: node:26-alpine
-    container_name: iamfabriceg-cms
+    container_name: iamfabriceg-bot-cms
     depends_on:
       mongo:
         condition: service_healthy
@@ -63,14 +63,14 @@ services:
       NODE_ENV: development
       PORT: "3001"
       CMS_PORT: "3001"
-      DATABASE_URI: mongodb://mongo:27017/iamfabriceg
+      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
       PAYLOAD_URL: http://cms:3001
       BOT_WEBHOOK_URL: http://bot:3000
     working_dir: /app
     volumes:
       - ./:/app
-      - cms-node-modules:/app/node_modules
-      - cms-next-cache:/app/cms/.next
+      - iamfabriceg-bot-cms-node-modules:/app/node_modules
+      - iamfabriceg-bot-cms-next:/app/cms/.next
     command: >-
       sh -c "corepack enable && corepack prepare pnpm@10.15.0 --activate &&
       pnpm install --frozen-lockfile --filter cms... &&
@@ -86,7 +86,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  mongo-data:
-  bot-node-modules:
-  cms-node-modules:
-  cms-next-cache:
+  iamfabriceg-bot-mongo-data:
+  iamfabriceg-bot-node-modules:
+  iamfabriceg-bot-cms-node-modules:
+  iamfabriceg-bot-cms-next:

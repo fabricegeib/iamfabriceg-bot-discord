@@ -36,5 +36,5 @@ jobs:
       - name: Build CMS
         run: pnpm --filter cms build
         env:
-          DATABASE_URI: mongodb://127.0.0.1:27017/iamfabriceg
+          DATABASE_URI: mongodb://127.0.0.1:27017/iamfabriceg_bot
           PAYLOAD_SECRET: ci-build-secret-not-used-at-runtime

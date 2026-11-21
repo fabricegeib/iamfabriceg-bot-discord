@@ -17,7 +17,7 @@ corepack pnpm docker:dev
 | Front public | http://localhost:3001/ |
 | Endpoint santé CMS | http://localhost:3001/api/bot/healthz |
 | Endpoint résumé bot | http://localhost:3001/api/bot/summary |
-| MongoDB | mongodb://localhost:27017/iamfabriceg |
+| MongoDB | mongodb://localhost:27017/iamfabriceg_bot |
 
 ### Sans Docker
 
@@ -33,7 +33,7 @@ MongoDB doit tourner localement (par exemple via `docker compose -f docker-compo
 
 `pnpm cms:seed` crée :
 
-- un utilisateur `bot@fabrice.local` avec le mot de passe `SEED_ADMIN_PASSWORD` (`Admin1234!` par défaut) ;
+- un utilisateur `bot@iamfabriceg.local` avec le mot de passe `SEED_ADMIN_PASSWORD` (`Admin1234!` par défaut) ;
 - une **clé API** affichée en console sous la forme `PAYLOAD_API_KEY=...` à copier dans `.env` ;
 - quelques jeux (Fortnite, GTA V, Rocket League, Aniimo, GOALS) et commandes de démonstration.
 
@@ -121,7 +121,7 @@ Le bot vérifie la signature avec `timingSafeEqual` et journalise l'événement.
 Voir [`.env.example`](../.env.example). Les plus importantes pour le CMS :
 
 ```env
-DATABASE_URI=mongodb://127.0.0.1:27017/iamfabriceg
+DATABASE_URI=mongodb://127.0.0.1:27017/iamfabriceg_bot
 PAYLOAD_SECRET=
 PAYLOAD_URL=http://127.0.0.1:3001
 CMS_PORT=3001
@@ -132,6 +132,6 @@ SEED_ADMIN_PASSWORD=Admin1234!
 
 En Docker, les compose files surchargent automatiquement :
 
-- `DATABASE_URI=mongodb://mongo:27017/iamfabriceg`
+- `DATABASE_URI=mongodb://mongo:27017/iamfabriceg_bot`
 - `PAYLOAD_URL=http://cms:3001`
 - `BOT_WEBHOOK_URL=http://bot:3000`

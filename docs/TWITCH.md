@@ -15,7 +15,7 @@ Utilise Helix (`/users` puis `/streams`) pour afficher : statut live, titre, jeu
 ## 3. Alertes EventSub
 
 ```bash
-npm run twitch:subscribe iamfabriceg
+corepack pnpm twitch:subscribe iamfabriceg
 ```
 
 Cela crée les abonnements `stream.online` et `stream.offline` avec le callback :

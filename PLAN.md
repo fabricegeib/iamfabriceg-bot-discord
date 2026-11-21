@@ -1,4 +1,4 @@
-# PLAN DE MODERNISATION — iamfabriceg Discord Bot
+# PLAN DE MODERNISATION — iamfabriceg Bot (Discord)
 
 > Date : 2026-11-21  
 > État : **plan validé, prêt à exécuter**  
@@ -136,7 +136,7 @@ Ordre prévu : 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8. Chaque PR est autono
 - [x] Dependencies modernisées, paquets morts supprimés, `npm audit` = 0 vulnérabilité
 - [x] `node:26-alpine`, healthcheck, `Dockerfile` et `docker-compose.prod.yml`
 - [x] `eslint.config.js` (flat config) + Prettier + scripts `lint`, `format`, `test`
-- [x] CI GitHub Actions : `npm ci`, `lint`, `test`
+- [x] CI GitHub Actions : `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm test`
 - [x] README réécrit + `docs/PAYLOAD.md` + `docs/TWITCH.md`
 
 ### Phase 3 — Interactions (`BUG-3`, `BUG-4`)
@@ -179,7 +179,7 @@ Ordre prévu : 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8. Chaque PR est autono
 
 ### Phase 7 — Twitch (`FEAT-8`)
 
-- [x] Abonnements EventSub `stream.online` / `stream.offline` (`npm run twitch:subscribe`)
+- [x] Abonnements EventSub `stream.online` / `stream.offline` (`pnpm twitch:subscribe`)
 - [x] Callback HTTPS `PUBLIC_URL/webhooks/twitch` + challenge + HMAC
 - [x] Embeds d'alertes live / offline
 - [x] Commande `/twitch <channel>`
@@ -194,9 +194,9 @@ Ordre prévu : 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8. Chaque PR est autono
 
 ## Résultat des vérifications (22/11/2026)
 
-- `npm run lint` : **0 erreur, 0 warning**
-- `npm test` : **20 tests réussis**
-- `npm audit` : **0 vulnérabilité**
+- `pnpm lint` : **0 erreur, 0 warning**
+- `pnpm test` : **20 tests réussis**
+- Audit npm (avant migration) : **0 vulnérabilité**
 - Commandes chargées : **17** (toutes avec `data` + `execute`, JSON valide)
 - `--dry` local : serveur `/healthz` répond `200 {"ok":true,...}`
 
@@ -218,7 +218,7 @@ Ordre prévu : 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8. Chaque PR est autono
 
 ## 9. Définition de terminé
 
-- `npm ci && npm run lint && npm test` passe sur chaque branche.
+- `pnpm install --frozen-lockfile && pnpm lint && pnpm test` passe sur chaque branche.
 - Le bot démarre avec Node 26 et uniquement les variables `.env` documentées.
 - Toutes les commandes déployées répondent, y compris les boutons de rôles.
 - Aucune clé ni token dans le dépôt.
@@ -279,7 +279,7 @@ Nouvelle PR prévue avec `build/modernisation-2026` comme base afin de préserve
 - `pnpm --filter cms lint` : 0 erreur, 8 avertissements `no-explicit-any` (types Payload dynamiques)
 - `pnpm --filter cms build` : succès (routes `/`, `/admin/[[...segments]]`, `/api/[...slug]`)
 - `docker compose -f docker-compose.dev.yml config` et `...prod.yml config` : valides
-- Seed Payload : admin `bot@fabrice.local`, clé API générée, 5 jeux et 5 commandes
+- Seed Payload : admin `bot@iamfabriceg.local`, clé API générée, 5 jeux et 5 commandes
 - Webhook : signature HMAC vérifiée côté bot, mauvaise signature rejetée en 401
 
 ### Commandes de validation
