@@ -1,4 +1,4 @@
-name: iamfabriceg-discord-bot
+name: iamfabriceg
 
 services:
   discord-bot:

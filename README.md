@@ -127,10 +127,16 @@ pm2 start index.js --watch --name discord
 - https://www.fortnite.com/news/fortnite-save-the-world-update-state-of-development?lang=en-US
 - https://pokemongolive.com/?hl=en
 - https://www.pokemon.com/us/pokedex/mew
+- https://redeem.ubisoft.com/xdefiant/fr-FR
 <!-- https://skidip.team -->
 
 - https://support.discord.com/hc/fr/articles/6156116949911-B%C3%AAta-de-l-Accueil-de-Serveur
 - https://discord.com/developers/docs/intro
+- https://sac.epicgames.com/fr/overview
+- https://www.indy.fr/prix/
+- https://dev.epicgames.com/community/fortnite/getting-started/creative?lang=fr
+- https://github.com/msx752/FTN-Power
+- https://github.com/AnIdiotsGuide/discordjs-bot-guide/blob/master/frequently-asked-questions.md
 
 ---
 
