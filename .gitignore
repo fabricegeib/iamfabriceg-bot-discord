@@ -1,5 +1,15 @@
 node_modules
 config.json
 .env
+.env.*
+!.env.example
+cms/.env
+cms/.env.*
+!cms/.env.example
+.next/
+cms/.next/
+cms/next-env.d.ts
+coverage/
+*.log
 *.Identifier
 .DS_Store

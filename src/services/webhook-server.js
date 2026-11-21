@@ -85,7 +85,16 @@ function createWebhookServer({ port = 3000, secret = "", twitchSecret = "", onEv
       }
 
       const signature = req.headers["x-payload-signature"] || req.headers["x-webhook-signature"];
-      if (secret && !verifySignature(secret, raw, signature)) {
+      const sharedSecret = req.headers["x-webhook-secret"];
+      const signatureOk = signature ? verifySignature(secret, raw, signature) : false;
+      const sharedSecretOk =
+        !signature && secret && typeof sharedSecret === "string"
+          ? timingSafeEqualHex(
+              nodeCrypto.createHash("sha256").update(secret).digest("hex"),
+              nodeCrypto.createHash("sha256").update(sharedSecret).digest("hex"),
+            )
+          : false;
+      if (secret && !signatureOk && !sharedSecretOk) {
         log.warn("Signature Payload invalide, requête rejetée");
         return json(res, 401, { error: "Signature invalide" });
       }

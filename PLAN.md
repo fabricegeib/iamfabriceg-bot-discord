@@ -237,3 +237,65 @@ gh pr create --title "🔒 Sécurité : token, permissions et .env" --body "Voir
 ```
 
 Répéter avec les autres branches du tableau.
+
+---
+
+## 11. Extension Docker / pnpm / Payload CMS (23/11/2026)
+
+Branche : `build/docker-pnpm-payload-admin`, empilée sur `build/modernisation-2026` (PR #24).
+Nouvelle PR prévue avec `build/modernisation-2026` comme base afin de préserver la PR #24.
+
+### Décisions complémentaires
+
+| Sujet | Décision |
+|---|---|
+| Gestionnaire de paquets | **pnpm 10.15.0** via Corepack (workspace root + `cms/`) ; `package-lock.json` supprimé |
+| Docker | **dev et prod** : `bot`, `cms`, `mongo` ; code monté en dev, images construites en prod |
+| CMS | **Payload v3.94.1 + MongoDB 8**, admin complet et front public en lecture seule |
+| Admin CMS | Collections : users, games, commands, commandUsages, discordRoles, events, news, streamAlerts, webhookEvents, profiles, media + global `botSettings` |
+| Sécurité | Secrets uniquement dans `.env` ; webhooks signés HMAC ; clé API bot générée par seed |
+| Compatibilité | Bot reste CommonJS + discord.js 14 ; CMS est ESM/TypeScript (Next 16) |
+
+### État d'avancement
+
+- [x] `packageManager`, `pnpm-workspace.yaml`, scripts `cms:*` et `docker:*`
+- [x] `.env.example` complet (Discord, APIs, CMS, Docker, rôles Aniimo/GOALS)
+- [x] CI pnpm (`pnpm/action-setup`, `--frozen-lockfile`, build CMS)
+- [x] `Dockerfile` bot pnpm + `docker-compose.dev.yml` / `docker-compose.prod.yml` (bot + cms + mongo)
+- [x] `README.md` pnpm / Docker / CMS ; `docs/CMS.md`
+- [x] Webhook bot : accepte `x-payload-signature` (HMAC) **et** `x-webhook-secret`
+- [x] Scaffold CMS Payload : 11 collections, global `botSettings`, endpoints `/bot/*`, hooks signés, seed, admin et front public en lecture seule
+- [x] `corepack pnpm install` → `pnpm-lock.yaml` (workspace root + `cms`), `package-lock.json` supprimé
+- [x] `cms/Dockerfile` multi-stage et lint CMS natif (Next 16 flat config)
+- [x] Validations : `pnpm lint`, `pnpm test` (20/20), `pnpm --filter cms lint`, `pnpm --filter cms build`, `docker compose config` (dev + prod)
+- [x] Smoke tests HTTP : `/api/bot/healthz`, `/`, `/admin`, `/api/bot/summary`, `/api/games` (clé API), `/api/bot/profile` (401 sans clé)
+- [x] Test bout en bout du webhook : PATCH Payload → HMAC `x-payload-signature` → bot accepte (200) et rejette une signature invalide (401)
+- [ ] Commit, push et création de la nouvelle PR
+
+### Résultat des validations (23/11/2026)
+
+- `pnpm lint` : 0 erreur
+- `pnpm test` : 20/20
+- `pnpm --filter cms lint` : 0 erreur, 8 avertissements `no-explicit-any` (types Payload dynamiques)
+- `pnpm --filter cms build` : succès (routes `/`, `/admin/[[...segments]]`, `/api/[...slug]`)
+- `docker compose -f docker-compose.dev.yml config` et `...prod.yml config` : valides
+- Seed Payload : admin `bot@fabrice.local`, clé API générée, 5 jeux et 5 commandes
+- Webhook : signature HMAC vérifiée côté bot, mauvaise signature rejetée en 401
+
+### Commandes de validation
+
+```bash
+corepack pnpm install --frozen-lockfile
+corepack pnpm lint
+corepack pnpm test
+corepack pnpm --filter cms build
+docker compose -f docker-compose.dev.yml config
+docker compose -f docker-compose.prod.yml config
+```
+
+### Actions attendues de l'utilisateur
+
+1. Renseigner `.env` (ne pas coller les valeurs dans le chat).
+2. Créer les rôles Discord Aniimo et GOALS puis renseigner `ROLE_ANIIMO_ID` / `ROLE_GOALS_ID`.
+3. Confirmer l'ID du salon `#bot-test` (`652684137957818378` par défaut).
+4. Après validation : `pnpm deploy` et `pnpm send:roles` dans `#bot-test`.

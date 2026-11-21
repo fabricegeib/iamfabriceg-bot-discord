@@ -2,36 +2,102 @@
 
 Bot Discord personnel pour [iamfabriceg.xyz](https://iamfabriceg.xyz), écrit en **CommonJS** avec **discord.js 14**.
 
-> Version modernisée (novembre 2026) : Node 26, interactions slash, APIs externes, catalogue de 17 jeux, Payload CMS v3, Twitch EventSub, modération et monitoring.
-> Voir [`PLAN.md`](./PLAN.md) pour le plan complet et [`docs/PAYLOAD.md`](./docs/PAYLOAD.md) / [`docs/TWITCH.md`](./docs/TWITCH.md) pour les intégrations.
+> Version modernisée (novembre 2026) : Node 26, pnpm, Docker dev/prod, interactions slash, APIs externes,
+> catalogue de 17 jeux, **Payload CMS v3 + MongoDB** (admin complet + front public), Twitch EventSub,
+> modération et monitoring.
+>
+> Voir [`PLAN.md`](./PLAN.md), [`docs/PAYLOAD.md`](./docs/PAYLOAD.md), [`docs/CMS.md`](./docs/CMS.md) et [`docs/TWITCH.md`](./docs/TWITCH.md).
 
 ## ⚠️ Contraintes en vigueur
 
-- Le dossier `backup/` est **lecture seule** : aucun fichier n'y est supprimé, déplacé ou modifié. Il sert uniquement de consultation.
-- Le token Discord actuel est **conservé** (pas de rotation pour le moment). La rotation reste recommandée à plus long terme.
+- `backup/` est **lecture seule** : aucun fichier n'y est supprimé, déplacé ou modifié.
+- Le token Discord actuel est **conservé** (pas de rotation pour le moment).
+- Les secrets ne sont jamais versionnés : tout est dans `.env` (ignoré par Git).
 
 ## Prérequis
 
-- **Node.js 26 LTS** (`node:26-alpine` en Docker) — minimum accepté : 22.12.
-- npm 10+.
+- **Node.js 26 LTS** (minimum 22.12) — images Docker `node:26-alpine`.
+- **pnpm 10.15.0** via Corepack : `corepack enable && corepack prepare pnpm@10.15.0 --activate`.
+- **Docker Engine 29+** et **Compose v5+** pour les environnements conteneurisés.
 - Un serveur Discord avec le bot invité avec les permissions minimales (voir `/permissions`).
 
-## Installation
+## Installation rapide (local, sans Docker)
 
 ```bash
-npm ci
-cp .env.example .env   # puis renseigner DISCORD_TOKEN, CLIENT_ID, GUILD_ID
-npm run deploy         # déploie les commandes sur GUILD_ID (test)
-npm start
+corepack pnpm install --frozen-lockfile
+cp .env.example .env          # renseigner DISCORD_TOKEN, CLIENT_ID, GUILD_ID et les secrets CMS
+corepack pnpm cms:seed        # génère la clé API du bot + quelques données de base
+corepack pnpm deploy          # déploie les commandes sur GUILD_ID (test)
+corepack pnpm dev             # bot (port 3000)
+corepack pnpm cms:dev         # CMS (port 3001) — dans un second terminal
+corepack pnpm send:roles
 ```
 
-Déploiement global (prod, propagation jusqu'à 1 h) :
+MongoDB doit être accessible sur `mongodb://127.0.0.1:27017/iamfabriceg` (fourni par `pnpm docker:dev`).
+
+Déploiement global des commandes (prod, propagation jusqu'à 1 h) :
 
 ```bash
-npm run deploy -- --global
+corepack pnpm deploy -- --global
 ```
 
-## Commandes
+## Développement avec Docker
+
+```bash
+corepack pnpm docker:dev
+# ou : docker compose -f docker-compose.dev.yml up -d
+```
+
+| Service | URL | Rôle |
+|---|---|---|
+| `bot` | http://localhost:3000/healthz | Bot Discord + webhooks |
+| `cms` | http://localhost:3001/admin | Admin Payload |
+| `cms` | http://localhost:3001/ | Front public (lecture seule) |
+| `mongo` | localhost:27017 | Base MongoDB |
+
+Le code est monté depuis l'hôte : les modifications sont visibles immédiatement (hot reload pour le CMS,
+redémarrage manuel du bot). Arrêt : `corepack pnpm docker:dev:down`.
+
+## Production avec Docker
+
+```bash
+corepack pnpm docker:prod
+# ou : docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Les images `iamfabriceg/bot:latest` et `iamfabriceg/cms:latest` sont construites depuis `Dockerfile` et
+`cms/Dockerfile`. Le bot attend que le CMS et MongoDB soient `healthy`. Arrêt : `corepack pnpm docker:prod:down`.
+
+## CMS Payload v3
+
+Le CMS est un projet Next.js 16 / React 19 dans [`cms/`](./cms). Il utilise le même workspace pnpm.
+
+- **Admin** : http://localhost:3001/admin — collection `users`, rôles `admin`/`editor`/`bot`.
+- **Front public** : http://localhost:3001/ — jeux publiés, commandes actives, actualités et dernier statut.
+  Aucun formulaire d'écriture n'y est exposé.
+- **Endpoint bot** : `GET /api/bot/summary`, `GET /api/bot/healthz`, `POST /api/bot/profile`.
+- **Webhooks** : les hooks `afterChange` publient vers `BOT_WEBHOOK_URL/webhooks/payload` avec une signature
+  HMAC-SHA256 (`x-payload-signature`) calculée avec `WEBHOOK_SECRET`.
+
+Collections : `users`, `games`, `commands`, `commandUsages`, `discordRoles`, `events`, `news`,
+`streamAlerts`, `webhookEvents`, `profiles`, `media` — plus le global `botSettings`.
+Détails : [`docs/CMS.md`](./docs/CMS.md).
+
+Variables principales :
+
+```env
+DATABASE_URI=mongodb://127.0.0.1:27017/iamfabriceg
+PAYLOAD_SECRET=<openssl rand -hex 32>
+PAYLOAD_URL=http://127.0.0.1:3001
+PAYLOAD_API_KEY=<générée par pnpm cms:seed>
+BOT_WEBHOOK_URL=http://127.0.0.1:3000
+WEBHOOK_SECRET=<même valeur dans le bot et le CMS>
+```
+
+En Docker, `DATABASE_URI`, `PAYLOAD_URL` et `BOT_WEBHOOK_URL` sont surchargés automatiquement par les
+compose files (`mongo:27017`, `cms:3001`, `bot:3000`).
+
+## Commandes du bot
 
 | Commande | Description | Clé requise |
 |---|---|---|
@@ -54,24 +120,17 @@ npm run deploy -- --global
 | `/profil [pseudo]` | Lie le profil Discord au CMS | `PAYLOAD_URL` |
 | `/sync` | Synchronise les jeux depuis le CMS (admin) | `PAYLOAD_URL` |
 
-Les commandes absentes de clé répondent par un message explicite : le bot **dégrade gracieusement** et ne plante pas.
+Les commandes sans clé répondent par un message explicite : le bot **dégrade gracieusement**.
 
 ## Catalogue de jeux
 
-15 jeux historiques + **Aniimo** et **GOALS** ajoutés en 2026 :
+15 jeux historiques + **Aniimo** et **GOALS** : Among Us, Brawlhalla, Fall Guys, EA Sports FC, Fortnite,
+Forza Horizon 4, GTA V, League of Legends, Pokémon, Prominence Poker, Rainbow Six Siege, Red Dead Redemption 2,
+Rocket League, Teamfight Tactics, Valorant, **Aniimo**, **GOALS**.
 
-Among Us, Brawlhalla, Fall Guys, EA Sports FC (FIFA), Fortnite, Forza Horizon 4, GTA V, League of Legends, Pokémon, Prominence Poker, Rainbow Six Siege, Red Dead Redemption 2, Rocket League, Teamfight Tactics, Valorant, **Aniimo**, **GOALS**.
-
-Source de vérité : [`src/config/games.js`](./src/config/games.js), éventuellement enrichie par Payload via `/sync`.
-
-### Boutons de rôles
-
-```bash
-npm run send:roles
-```
-
-Les boutons utilisent des `customId` de la forme `role:<roleId>` et sont gérés par `src/handlers/buttonHandler.js`.
-Les IDs de rôles viennent de `games.js` ou de `.env` (`ROLE_ANIIMO_ID`, `ROLE_GOALS_ID`).
+Source de vérité : [`src/config/games.js`](./src/config/games.js), enrichie par Payload via `/sync`.
+Les rôles Fortnite (`722561307903262831`), GTA V (`722565846383329282`) et Rocket League
+(`802663319634575362`) sont déjà câblés. Aniimo et GOALS se configurent via `ROLE_ANIIMO_ID` / `ROLE_GOALS_ID`.
 
 ## APIs externes
 
@@ -86,28 +145,18 @@ Les IDs de rôles viennent de `games.js` ou de `.env` (`ROLE_ANIIMO_ID`, `ROLE_G
 | Twitch Helix / EventSub | `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET` | ❌ |
 | FreeToGame, GamerPower, CheapShark, Speedrun.com, Open Trivia | — | ✅ |
 
-Toutes les requêtes passent par `src/services/http.js` : timeout (`AbortSignal.timeout`), retry exponentiel sur 5xx/429 et cache TTL partagé (`src/services/cache.js`).
-
-## Payload CMS v3
-
-Trois modes sont implémentés :
-
-1. **Lecture + cache** : `GET /api/<slug>?depth=1&limit=100`, headers `Authorization: <authSlug> API-Key <clé>`.
-2. **Custom endpoint** : `client.custom("bot/...")` → voir [`docs/PAYLOAD.md`](./docs/PAYLOAD.md).
-3. **Écriture + webhooks** : `create`, `update`, `remove`, `upsertDiscordProfile`, et réception signée sur `POST /webhooks/payload`.
-
-Variables : `PAYLOAD_URL`, `PAYLOAD_AUTH_SLUG`, `PAYLOAD_GAMES_SLUG`, `PAYLOAD_API_KEY`, `WEBHOOK_SECRET`.
+Toutes les requêtes passent par `src/services/http.js` : timeout, retry exponentiel et cache TTL.
 
 ## Twitch EventSub
 
 ```bash
-npm run twitch:subscribe iamfabriceg
+corepack pnpm twitch:subscribe iamfabriceg
 # callback : ${PUBLIC_URL}/webhooks/twitch
 ```
 
-La vérification du challenge, la validation HMAC et le dispatch des notifications `stream.online` / `stream.offline` sont dans `src/services/webhook-server.js` et `src/services/twitch-eventsub.js`. Détails : [`docs/TWITCH.md`](./docs/TWITCH.md).
+Challenge, validation HMAC et dispatch `stream.online` / `stream.offline` : [`docs/TWITCH.md`](./docs/TWITCH.md).
 
-## Serveur HTTP
+## Serveur HTTP du bot
 
 | Route | Rôle |
 |---|---|
@@ -115,51 +164,40 @@ La vérification du challenge, la validation HMAC et le dispatch des notificatio
 | `POST /webhooks/payload` | Webhooks Payload signés HMAC-SHA256 |
 | `POST /webhooks/twitch` | Callback EventSub (challenge + notifications) |
 
-Port configurable via `PORT` (défaut `3000`).
-
-## Docker
+## Scripts pnpm
 
 ```bash
-npm run docker:dev
-docker compose -f docker-compose.prod.yml up -d --build
+corepack pnpm install --frozen-lockfile
+corepack pnpm dev              # bot en local
+corepack pnpm start            # bot
+corepack pnpm deploy           # commandes slash
+corepack pnpm send:roles
+corepack pnpm twitch:subscribe <channel>
+corepack pnpm cms:dev          # CMS en local (port 3001)
+corepack pnpm cms:build        # build Next.js
+corepack pnpm cms:seed         # admin + clé API bot
+corepack pnpm lint
+corepack pnpm test             # 20 tests node:test
+corepack pnpm docker:dev
+corepack pnpm docker:prod
 ```
 
-Le `Dockerfile` utilise `node:26-alpine`, l'utilisateur `node`, un healthcheck et un arrêt propre (`SIGTERM`).
-
-## Scripts
-
-```bash
-npm ci            # installation reproducible
-npm start         # démarrage du bot
-npm run deploy    # commandes slash
-npm run send:roles
-npm run twitch:subscribe <channel>
-npm run lint
-npm run lint:fix
-npm run format
-npm test          # 20 tests node:test
-npm run docker:dev
-```
-
-> Sur cet environnement Windows avec nvm4w, les scripts npm doivent être lancés avec `--script-shell=pwsh` si `cmd` ne trouve pas `node`. En CI Linux, `npm test` fonctionne normalement.
+> Sur cet environnement Windows,Corepack fonctionne mais le binaire `pnpm` n'est pas sur le PATH : utiliser
+> `corepack pnpm ...`. Si les scripts échouent avec `'node' n'est pas reconnu`, ajouter `--script-shell=pwsh`.
 
 ## CI
 
-GitHub Actions (`.github/workflows/ci.yml`) : Node 26, `npm ci`, `npm run lint`, `npm test` sur les branches `master`, `build/**`, `feat/**`, `refactor/**`, `chore/**`, `security/**` et les PR.
+GitHub Actions (`.github/workflows/ci.yml`) : Node 26 + pnpm 10.15.0, `pnpm install --frozen-lockfile`,
+`pnpm lint`, `pnpm test` et `pnpm --filter cms build`.
 
 ## Architecture
 
 ```
-src/
-  config/       env.js (Zod), games.js (17 jeux)
-  services/     logger, cache, http, errors, payload, webhook-server, twitch-eventsub
-    providers/  pokeapi, fortnite, rawg, riot, steam, twitch, keyless
-  handlers/     command, button, selectMenu, cooldown, error
-  events/       interactions/interactionCreate, logs/ready
-  commands/     info, games, moderation, cms
-  tasks/        deploy-commands, send-roles, subscribe-twitch
-  utils/        loaders, roleHandler
+src/            bot CommonJS (config, services, providers, handlers, events, commands, tasks, utils)
+cms/            Payload v3 / Next 16 (collections, globals, endpoints, hooks, front public)
 tests/          20 tests node:test
+docker-compose.dev.yml / docker-compose.prod.yml
+Dockerfile / cms/Dockerfile
 ```
 
 `backup/` est exclu du lint, du formatage et de la découverte des tests.

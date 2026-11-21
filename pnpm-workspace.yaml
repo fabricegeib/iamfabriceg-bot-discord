@@ -1,0 +1,7 @@
+packages:
+  - 'cms'
+
+# pnpm 10 : autoriser les scripts de build nécessaires à tsx / Next.
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
