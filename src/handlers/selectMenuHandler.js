@@ -1,53 +1,71 @@
+const { createLogger } = require("../services/logger");
+const { pokeapi, rawg } = require("../services/providers");
+const { byKey } = require("../config/games");
+const { friendlyMessage, respondError } = require("./error");
+
+const log = createLogger("select");
+
+/** Construit un embed de fiche Pokémon (également utilisé par /pokemon). */
+function pokemonEmbed(pokemon, EmbedBuilder) {
+  const embed = new EmbedBuilder()
+    .setColor(0xdc2626)
+    .setTitle(`${pokemon.displayName} · #${String(pokemon.id).padStart(3, "0")}`)
+    .setDescription(pokemon.description || pokemon.genus || "")
+    .addFields(
+      { name: "Types", value: pokemon.types.join(" / ") || "—", inline: true },
+      { name: "Taille", value: `${pokemon.height} m`, inline: true },
+      { name: "Poids", value: `${pokemon.weight} kg`, inline: true },
+      {
+        name: "Statistiques",
+        value: pokemon.stats.map((stat) => `${stat.name} : ${stat.value}`).join("\n").slice(0, 1024),
+      }
+    );
+  if (pokemon.artwork) embed.setImage(pokemon.artwork);
+  if (pokemon.speciesUrl) embed.setURL(pokemon.speciesUrl);
+  return embed;
+}
+
 module.exports = async (interaction) => {
-	// Gérer le menu de sélection des Pokémon
-	if (interaction.customId === 'starter') {
-		try {
-			const selected = interaction.values[0];
+  try {
+    const [action, value] = interaction.customId.split(":");
 
-			const pokemonData = {
-				bulbasaur: {
-					name: 'Bulbasaur',
-					emoji: '🌱',
-					type: 'Grass/Poison',
-					number: '001',
-					description: 'A strange seed was planted on its back at birth. The plant sprouts and grows with this Pokémon.'
-				},
-				charmander: {
-					name: 'Charmander',
-					emoji: '🔥',
-					type: 'Fire',
-					number: '004',
-					description: 'Obviously prefers hot places. When it rains, steam is said to spout from the tip of its tail.'
-				},
-				squirtle: {
-					name: 'Squirtle',
-					emoji: '💧',
-					type: 'Water',
-					number: '007',
-					description: 'After birth, its back swells and hardens into a shell. Powerfully sprays foam from its mouth.'
-				}
-			};
+    if (action === "pokemon" || interaction.customId === "starter") {
+      await interaction.deferReply({ ephemeral: true });
+      const query = (interaction.values?.[0] || value || "").replace(/^pokemon:/, "");
+      const pokemon = await pokeapi.getPokemon(query);
+      const { EmbedBuilder } = require("discord.js");
+      await interaction.editReply({ embeds: [pokemonEmbed(pokemon, EmbedBuilder)] });
+      log.info(`${interaction.user.tag} a consulté ${pokemon.name}`);
+      return;
+    }
 
-			const pokemon = pokemonData[selected];
+    if (action === "game") {
+      await interaction.deferReply({ ephemeral: true });
+      const game = byKey.get(interaction.values?.[0] || value);
+      if (!game) throw new Error("Jeu introuvable.");
+      const detail = await rawg.getForCatalogGame(game);
+      const { EmbedBuilder } = require("discord.js");
+      const embed = new EmbedBuilder()
+        .setColor(game.color)
+        .setTitle(detail.name)
+        .setDescription(detail.description || game.category)
+        .addFields(
+          { name: "Genres", value: detail.genres.join(", ") || "—", inline: true },
+          { name: "Note RAWG", value: detail.rating ? `${detail.rating}/5` : "—", inline: true },
+          { name: "Plateformes", value: detail.platforms.join(", ").slice(0, 1024) || "—" }
+        )
+        .setFooter({ text: rawg.ATTRIBUTION });
+      if (detail.image) embed.setImage(detail.image);
+      if (detail.website) embed.setURL(detail.website);
+      await interaction.editReply({ embeds: [embed] });
+      return;
+    }
 
-			await interaction.reply({
-				content: `${pokemon.emoji} **${pokemon.name}** #${pokemon.number}\n**Type:** ${pokemon.type}\n\n*${pokemon.description}*`,
-				ephemeral: true
-			});
-
-			console.log(`✅ ${interaction.user.tag} a choisi ${pokemon.name}`);
-		} catch (error) {
-			console.error('❌ Erreur menu Pokemon:', error);
-
-			if (!interaction.replied && !interaction.deferred) {
-				await interaction.reply({
-					content: 'Une erreur est survenue lors de la sélection du Pokémon!',
-					ephemeral: true
-				});
-			}
-		}
-	}
-
-	// Vous pouvez ajouter d'autres menus ici
-	// if (interaction.customId === 'autre-menu') { ... }
+    log.debug(`Menu non géré : ${interaction.customId}`);
+  } catch (error) {
+    log.error("Erreur sur un menu de sélection", error);
+    await respondError(interaction, friendlyMessage(error));
+  }
 };
+
+module.exports.pokemonEmbed = pokemonEmbed;

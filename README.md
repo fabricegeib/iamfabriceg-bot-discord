@@ -1,298 +1,165 @@
-# iamfabricegBot (Bot Discord)
+# iamfabricegBot — Discord
 
-A discord bot for [iamfabriceg.xyz](https://iamfabriceg.xyz) made by [Fabrice Geib](https://fabricegeib.com) with [comfy.js](https://github.com/instafluff/ComfyJS) and [discord.js](https://discord.js.org/#/)
+Bot Discord personnel pour [iamfabriceg.xyz](https://iamfabriceg.xyz), écrit en **CommonJS** avec **discord.js 14**.
 
-Add the bot (administrator permission) on your discord server with this [link](https://discord.com/api/oauth2/authorize?client_id=580073418968530973&permissions=8&scope=bot)
+> Version modernisée (novembre 2026) : Node 26, interactions slash, APIs externes, catalogue de 17 jeux, Payload CMS v3, Twitch EventSub, modération et monitoring.
+> Voir [`PLAN.md`](./PLAN.md) pour le plan complet et [`docs/PAYLOAD.md`](./docs/PAYLOAD.md) / [`docs/TWITCH.md`](./docs/TWITCH.md) pour les intégrations.
 
-https://discord.com/oauth2/authorize?client_id=580073418968530973&permissions=8&scope=bot+applications.commands
+## ⚠️ Contraintes en vigueur
 
-## invitation link and permissions
+- Le dossier `backup/` est **lecture seule** : aucun fichier n'y est supprimé, déplacé ou modifié. Il sert uniquement de consultation.
+- Le token Discord actuel est **conservé** (pas de rotation pour le moment). La rotation reste recommandée à plus long terme.
 
-```javascript
-const { PermissionFlagsBits } = require('discord.js');
+## Prérequis
 
-const permissions = 
-  PermissionFlagsBits.ViewChannel |           // Voir les salons
-  PermissionFlagsBits.SendMessages |          // Envoyer des messages
-  PermissionFlagsBits.SendMessagesInThreads | // Messages dans les fils
-  PermissionFlagsBits.EmbedLinks |            // Liens intégrés
-  PermissionFlagsBits.AttachFiles |           // Joindre des fichiers
-  PermissionFlagsBits.ReadMessageHistory |    // Lire l'historique
-  PermissionFlagsBits.AddReactions |          // Ajouter des réactions
-  PermissionFlagsBits.UseExternalEmojis |     // Emojis externes
-  PermissionFlagsBits.UseApplicationCommands; // Commandes slash
+- **Node.js 26 LTS** (`node:26-alpine` en Docker) — minimum accepté : 22.12.
+- npm 10+.
+- Un serveur Discord avec le bot invité avec les permissions minimales (voir `/permissions`).
 
-// Résultat: 277025508352
-```
-
-✅ **Nouvelle invitation sécurisée :**
-https://discord.com/api/oauth2/authorize?client_id=580073418968530973&permissions=277025508352&scope=bot%20applications.commands
-
-⚠️ **Anciennes invitations (ne plus utiliser) :**
-https://discord.com/api/oauth2/authorize?client_id=VOTRE_CLIENT_ID&permissions=52288&scope=bot%20applications.commands
-https://discord.com/api/oauth2/authorize?client_id=580073418968530973&permissions=52288&scope=bot%20applications.commands
-
-## install
+## Installation
 
 ```bash
-gh repo clone iamfabriceg-bot-discord
+npm ci
+cp .env.example .env   # puis renseigner DISCORD_TOKEN, CLIENT_ID, GUILD_ID
+npm run deploy         # déploie les commandes sur GUILD_ID (test)
+npm start
 ```
 
-## deploy commands
+Déploiement global (prod, propagation jusqu'à 1 h) :
 
 ```bash
-docker exec iamfabriceg-bot-discord npm run deploy
+npm run deploy -- --global
 ```
 
-## start
+## Commandes
+
+| Commande | Description | Clé requise |
+|---|---|---|
+| `/ping` | Latence client et websocket | — |
+| `/status` | Uptime, cache, serveurs, intégrations | — |
+| `/permissions` | Permissions et lien OAuth minimal | — |
+| `/options-info` | Renvoie la valeur saisie | — |
+| `/games list` | Catalogue des **17 jeux** | — |
+| `/games info <jeu>` | Fiche détaillée (RAWG si configuré) | `RAWG_API_KEY` (optionnel) |
+| `/games roles` | Liste des rôles de jeu configurés | — |
+| `/pokemon [nom]` | Pokédex dynamique (aléatoire si omis) | — |
+| `/fortnite shop` | Boutique actuelle en français | — |
+| `/fortnite news <mode>` | Actualités BR / STW / Creative | — |
+| `/fortnite stats <joueur>` | Statistiques Battle Royale | `FORTNITE_API_KEY` |
+| `/riot <invocateur> [region]` | Profil et classement LoL | `RIOT_API_KEY` |
+| `/steam <identifiant>` | Profil Steam et jeux les plus joués | `STEAM_API_KEY` |
+| `/deals [source]` | Offres Steam, jeux gratuits, giveaways | — |
+| `/twitch <chaine>` | Statut d'une chaîne | `TWITCH_CLIENT_ID/SECRET` |
+| `/kick`, `/prune`, `/mute`, `/unmute` | Modération (permissions Discord) | — |
+| `/profil [pseudo]` | Lie le profil Discord au CMS | `PAYLOAD_URL` |
+| `/sync` | Synchronise les jeux depuis le CMS (admin) | `PAYLOAD_URL` |
+
+Les commandes absentes de clé répondent par un message explicite : le bot **dégrade gracieusement** et ne plante pas.
+
+## Catalogue de jeux
+
+15 jeux historiques + **Aniimo** et **GOALS** ajoutés en 2026 :
+
+Among Us, Brawlhalla, Fall Guys, EA Sports FC (FIFA), Fortnite, Forza Horizon 4, GTA V, League of Legends, Pokémon, Prominence Poker, Rainbow Six Siege, Red Dead Redemption 2, Rocket League, Teamfight Tactics, Valorant, **Aniimo**, **GOALS**.
+
+Source de vérité : [`src/config/games.js`](./src/config/games.js), éventuellement enrichie par Payload via `/sync`.
+
+### Boutons de rôles
 
 ```bash
-docker-compose up -d
+npm run send:roles
 ```
 
-## advanced
+Les boutons utilisent des `customId` de la forme `role:<roleId>` et sont gérés par `src/handlers/buttonHandler.js`.
+Les IDs de rôles viennent de `games.js` ou de `.env` (`ROLE_ANIIMO_ID`, `ROLE_GOALS_ID`).
+
+## APIs externes
+
+| API | Variable `.env` | Sans clé |
+|---|---|---|
+| PokéAPI v2 | — | ✅ |
+| fortnite-api.com (shop, news) | — | ✅ |
+| fortnite-api.com (stats) | `FORTNITE_API_KEY` | ❌ |
+| RAWG | `RAWG_API_KEY` | ❌ |
+| Riot | `RIOT_API_KEY` | ❌ |
+| Steam | `STEAM_API_KEY` | ❌ |
+| Twitch Helix / EventSub | `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET` | ❌ |
+| FreeToGame, GamerPower, CheapShark, Speedrun.com, Open Trivia | — | ✅ |
+
+Toutes les requêtes passent par `src/services/http.js` : timeout (`AbortSignal.timeout`), retry exponentiel sur 5xx/429 et cache TTL partagé (`src/services/cache.js`).
+
+## Payload CMS v3
+
+Trois modes sont implémentés :
+
+1. **Lecture + cache** : `GET /api/<slug>?depth=1&limit=100`, headers `Authorization: <authSlug> API-Key <clé>`.
+2. **Custom endpoint** : `client.custom("bot/...")` → voir [`docs/PAYLOAD.md`](./docs/PAYLOAD.md).
+3. **Écriture + webhooks** : `create`, `update`, `remove`, `upsertDiscordProfile`, et réception signée sur `POST /webhooks/payload`.
+
+Variables : `PAYLOAD_URL`, `PAYLOAD_AUTH_SLUG`, `PAYLOAD_GAMES_SLUG`, `PAYLOAD_API_KEY`, `WEBHOOK_SECRET`.
+
+## Twitch EventSub
 
 ```bash
-# Déployer les commandes
-docker compose run --rm bot-tasks npm run deploy
-
-# Envoyer les rôles
-docker compose run --rm bot-tasks npm run send:roles
-
-# Lancer le bot normalement
-docker compose up -d iamfabriceg-bot-discord
+npm run twitch:subscribe iamfabriceg
+# callback : ${PUBLIC_URL}/webhooks/twitch
 ```
 
-## Commands :
+La vérification du challenge, la validation HMAC et le dispatch des notifications `stream.online` / `stream.offline` sont dans `src/services/webhook-server.js` et `src/services/twitch-eventsub.js`. Détails : [`docs/TWITCH.md`](./docs/TWITCH.md).
 
-```
-!beep
-!dice
-!embed
-!fn-creative
-!kick (if no args)
-!ping
-!role
-!rules-and-info
-!say
-!server
-!twitch
-!user
-!user-info [arguments]
-```
+## Serveur HTTP
 
-```
-Commande chargée: beep
-Commande chargée: dice
-Commande chargée: embed
-Commande chargée: fn-creative
-Commande chargée: ping
-Commande chargée: role
-Commande chargée: server
-Commande chargée: twitch
-Commande chargée: user-info
-Commande chargée: user
+| Route | Rôle |
+|---|---|
+| `GET /healthz` | Healthcheck JSON (uptime, cache) — utilisé par Docker |
+| `POST /webhooks/payload` | Webhooks Payload signés HMAC-SHA256 |
+| `POST /webhooks/twitch` | Callback EventSub (challenge + notifications) |
+
+Port configurable via `PORT` (défaut `3000`).
+
+## Docker
+
+```bash
+npm run docker:dev
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-- rules-and-info ajouter reactions pour accepter et devenir membre (acces salons bases)
-- roles
+Le `Dockerfile` utilise `node:26-alpine`, l'utilisateur `node`, un healthcheck et un arrêt propre (`SIGTERM`).
 
-## Upgrade discord.js@12.5.3 to discord.js@14.6.0
+## Scripts
 
-```
-npm list discord.js
-
-npm uninstall discord.js
-
-npm install discord.js @discordjs/voice
-```
-
-## Installation and start
-
-You need a `config.json`
-
-```
-{
-	"prefix": "!",
-  "token": "your_token_goes_here",
-  "clientId": "your_clientId_goes_here",
-  "guildId": "your_guildId_goes_here"
-}
+```bash
+npm ci            # installation reproducible
+npm start         # démarrage du bot
+npm run deploy    # commandes slash
+npm run send:roles
+npm run twitch:subscribe <channel>
+npm run lint
+npm run lint:fix
+npm run format
+npm test          # 20 tests node:test
+npm run docker:dev
 ```
 
-or a `.env`
+> Sur cet environnement Windows avec nvm4w, les scripts npm doivent être lancés avec `--script-shell=pwsh` si `cmd` ne trouve pas `node`. En CI Linux, `npm test` fonctionne normalement.
+
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) : Node 26, `npm ci`, `npm run lint`, `npm test` sur les branches `master`, `build/**`, `feat/**`, `refactor/**`, `chore/**`, `security/**` et les PR.
+
+## Architecture
 
 ```
-DISCORD_TOKEN=your_token_goes_here
+src/
+  config/       env.js (Zod), games.js (17 jeux)
+  services/     logger, cache, http, errors, payload, webhook-server, twitch-eventsub
+    providers/  pokeapi, fortnite, rawg, riot, steam, twitch, keyless
+  handlers/     command, button, selectMenu, cooldown, error
+  events/       interactions/interactionCreate, logs/ready
+  commands/     info, games, moderation, cms
+  tasks/        deploy-commands, send-roles, subscribe-twitch
+  utils/        loaders, roleHandler
+tests/          20 tests node:test
 ```
 
-to charge new commands `node .\deploy-commands.js`
-
-to start `node .`
-
-### discord.js
-
-```
-npm install discord.js
-# or
-yarn add discord.js
-```
-
-### NPM install
-
-```
-npm install
-
-npm install dotenv
-```
-
-### PM2
-
-```
-npm install pm2
-
-pm2 start app.js --watch --name app
-pm2 start index.js --watch --name discord
-```
-
-## Rules
-
-1. Be respectful to other server members (no homophobia, racism, etc).
-2. No NSFW content.
-3. Only help in #bot-support
-4. Don't ask for bots/provide bots.
-
-## Resources
-
-- https://discordapp.com/developers/applications/
-- https://discord.com/developers/applications
-- https://discordapp.com/developers/docs/intro
-- https://docs.discord.com/developers/intro
-
-- https://discord.js.org/
-- https://discordjs.guide/
-- https://discordapi.com/permissions.html
-- https://www.youtube.com/watch?v=fuEY1zYnOZE
-- https://www.youtube.com/watch?v=UdIzwu7d9LY&t=50s
-
-- New Application => CREATE AN APPLICATION
-- Bot => Build-A-Bot => PUBLIC BOT (True)
-
-- https://www.fortnite.com/news/fortnite-save-the-world-update-state-of-development?lang=en-US
-- https://pokemongolive.com/?hl=en
-- https://www.pokemon.com/us/pokedex/mew
-- https://redeem.ubisoft.com/xdefiant/fr-FR
-<!-- https://skidip.team -->
-
-- https://support.discord.com/hc/fr/articles/6156116949911-B%C3%AAta-de-l-Accueil-de-Serveur
-- https://discord.com/developers/docs/intro
-- https://sac.epicgames.com/fr/overview
-- https://www.indy.fr/prix/
-- https://dev.epicgames.com/community/fortnite/getting-started/creative?lang=fr
-- https://github.com/msx752/FTN-Power
-- https://github.com/AnIdiotsGuide/discordjs-bot-guide/blob/master/frequently-asked-questions.md
-
----
-
-## Roles
-
-- Live
-
-- Twitch Subscriber: Tier 3
-- Twitch Subscriber: Tier 2
-- Twitch Subscriber: Tier 1
-- Twitch Subscriber
-
-- FireTipR (block the add with bot)
-- uTip
-
-- jeux :
-  - among us
-  - brawlhalla
-  - fall guys
-  - fifa
-  - Fortnite
-  - forza horizon 4
-  - Grand Thef Auto V
-  - League of Legends
-  - prominence poker
-  - rainbow six siege
-  - Red Dead Redemption 2
-  - rocket league
-  - Teamfight Tactics
-  - Valorant
-
-- Membres
-- friends
-- gaming friends
-
-- food
-- artistes
-- jeux
-- musique
-- film serie
-
-- clip
-
-## Embed
-
-```json
-{
-  "embeds": [
-    {
-      "title": "<<< {{ChannelName}} is live on Twitch!>>>",
-      "url": "<<<{{ChannelUrl}}>>>",
-      "description": "<<<{{Game}}>>>"
-    }
-  ]
-}
-```
-
-```json
-{
-  "embeds": [
-    {
-      "title": "<<< {{ChannelName}} now follow you Twitch!>>>"
-    }
-  ]
-}
-```
-
-```json
-{
-  "content": "{{ChannelName}} went live on Twitch",
-  "embeds": [
-    {
-      "title": "{{ChannelUrl}}",
-      "url": "{{ChannelUrl}}",
-      "color": 6570404,
-      "footer": {
-        "text": "{{CreatedAt}}"
-      },
-      "image": {
-        "url": "{{StreamPreview}}"
-      },
-      "author": {
-        "name": "{{ChannelName}} is now streaming"
-      },
-      "fields": [
-        {
-          "name": "Playing",
-          "value": "{{Game}}",
-          "inline": true
-        },
-        {
-          "name": "Started at (streamer timezone)",
-          "value": "{{CreatedAt}}",
-          "inline": true
-        }
-      ]
-    }
-  ]
-}
-```
-
----
-
-.export FortniteGame/Content/Athena/Items/Cosmetics/LoadingScreens/LSID_053_SupplyLlama
-.export FortniteGame/Content/Athena/Items/Weapons/WID_Harvest_Pickaxe_MechanicalEngineer1H
+`backup/` est exclu du lint, du formatage et de la découverte des tests.

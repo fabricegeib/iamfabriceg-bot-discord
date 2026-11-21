@@ -1,0 +1,11 @@
+name: iamfabriceg
+
+services:
+  discord-bot:
+    build: .
+    container_name: iamfabriceg-discord-bot
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
