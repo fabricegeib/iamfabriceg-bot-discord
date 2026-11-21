@@ -1,5 +1,10 @@
 {
-  "main": "index.js",
+  "name": "iamfabriceg-bot-discord",
+  "version": "1.0.0",
+  "description": "Bot Discord pour iamfabriceg",
+  "main": "src/index.js",
+  "author": "Fabrice Geib",
+  "private": true,
   "scripts": {
     "deploy": "node src/tasks/deploy-commands.js",
     "send:roles": "node src/tasks/send-roles.js",

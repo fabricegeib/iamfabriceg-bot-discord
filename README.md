@@ -1,4 +1,4 @@
-# iamfabricegBot (Discord Bot)
+# iamfabricegBot (Bot Discord)
 
 A discord bot for [iamfabriceg.xyz](https://iamfabriceg.xyz) made by [Fabrice Geib](https://fabricegeib.com) with [comfy.js](https://github.com/instafluff/ComfyJS) and [discord.js](https://discord.js.org/#/)
 
@@ -6,9 +6,62 @@ Add the bot (administrator permission) on your discord server with this [link](h
 
 https://discord.com/oauth2/authorize?client_id=580073418968530973&permissions=8&scope=bot+applications.commands
 
-https://discordjs.guide/
+## invitation link and permissions
 
-https://discord.com/developers/applications
+```javascript
+const { PermissionFlagsBits } = require('discord.js');
+
+const permissions = 
+  PermissionFlagsBits.ViewChannel |           // Voir les salons
+  PermissionFlagsBits.SendMessages |          // Envoyer des messages
+  PermissionFlagsBits.SendMessagesInThreads | // Messages dans les fils
+  PermissionFlagsBits.EmbedLinks |            // Liens intégrés
+  PermissionFlagsBits.AttachFiles |           // Joindre des fichiers
+  PermissionFlagsBits.ReadMessageHistory |    // Lire l'historique
+  PermissionFlagsBits.AddReactions |          // Ajouter des réactions
+  PermissionFlagsBits.UseExternalEmojis |     // Emojis externes
+  PermissionFlagsBits.UseApplicationCommands; // Commandes slash
+
+// Résultat: 277025508352
+```
+
+✅ **Nouvelle invitation sécurisée :**
+https://discord.com/api/oauth2/authorize?client_id=580073418968530973&permissions=277025508352&scope=bot%20applications.commands
+
+⚠️ **Anciennes invitations (ne plus utiliser) :**
+https://discord.com/api/oauth2/authorize?client_id=VOTRE_CLIENT_ID&permissions=52288&scope=bot%20applications.commands
+https://discord.com/api/oauth2/authorize?client_id=580073418968530973&permissions=52288&scope=bot%20applications.commands
+
+## install
+
+```bash
+gh repo clone iamfabriceg-bot-discord
+```
+
+## deploy commands
+
+```bash
+docker exec iamfabriceg-bot-discord npm run deploy
+```
+
+## start
+
+```bash
+docker-compose up -d
+```
+
+## advanced
+
+```bash
+# Déployer les commandes
+docker compose run --rm bot-tasks npm run deploy
+
+# Envoyer les rôles
+docker compose run --rm bot-tasks npm run send:roles
+
+# Lancer le bot normalement
+docker compose up -d iamfabriceg-bot-discord
+```
 
 ## Commands :
 
@@ -111,9 +164,10 @@ pm2 start index.js --watch --name discord
 
 ## Resources
 
+- https://discordapp.com/developers/applications/
 - https://discord.com/developers/applications
 - https://discordapp.com/developers/docs/intro
-- https://discordapp.com/developers/applications/
+- https://docs.discord.com/developers/intro
 
 - https://discord.js.org/
 - https://discordjs.guide/
@@ -153,7 +207,6 @@ pm2 start index.js --watch --name discord
 - uTip
 
 - jeux :
-
   - among us
   - brawlhalla
   - fall guys
