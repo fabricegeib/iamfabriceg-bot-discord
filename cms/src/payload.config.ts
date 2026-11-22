@@ -23,7 +23,7 @@ const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 /**
- * `PAYLOAD_URL` est l'URL interne service-à-service (le bot appelle `http://cms:3001`).
+ * `PAYLOAD_URL` est l'URL interne service-à-service (le bot appelle `http://iamfabriceg-bot-cms:3001`).
  * Le navigateur utilise une autre origine (`http://localhost:31001` en local, le
  * domaine public en prod). Payload ajoute automatiquement `serverURL` à `csrf`,
  * mais ignore le cookie de session si l'origine de la requête n'y figure pas :

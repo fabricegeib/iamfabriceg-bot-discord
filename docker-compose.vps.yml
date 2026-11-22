@@ -1,17 +1,17 @@
 name: iamfabriceg-bot
 
 # Override VPS : Nginx Proxy Manager rejoint le réseau interne de la stack pour
-# atteindre `cms:3001` (front + admin). MongoDB reste sur le réseau interne only.
+# atteindre `iamfabriceg-bot-cms:3001` (front + admin). MongoDB reste hors de cette stack.
 # Usage :
 #   docker compose -f docker-compose.prod.yml -f docker-compose.vps.yml up -d
 
 services:
-  bot:
+  iamfabriceg-bot:
     networks:
       - default
       - nginx-proxy-manager
 
-  cms:
+  iamfabriceg-bot-cms:
     networks:
       - default
       - nginx-proxy-manager

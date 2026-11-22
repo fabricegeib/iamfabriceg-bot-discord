@@ -8,7 +8,7 @@ Dans `.env` :
 
 ```env
 # URL interne service-à-service (bot -> CMS)
-PAYLOAD_URL=http://cms:3001
+PAYLOAD_URL=http://iamfabriceg-bot-cms:3001
 # Origine navigateur autorisée dans csrf/cors (admin Payload)
 PAYLOAD_PUBLIC_URL=http://localhost:31001
 PAYLOAD_AUTH_SLUG=users

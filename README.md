@@ -42,7 +42,7 @@ MongoDB doit être accessible sur `mongodb://127.0.0.1:31017/iamfabriceg_bot` (f
 
 ```bash
 # 1. Seed du CMS : crée l'admin, génère PAYLOAD_API_KEY et les données de base
-docker compose -f docker-compose.dev.yml --profile tools run --rm cms-seed
+docker compose -f docker-compose.dev.yml --profile tools run --rm iamfabriceg-bot-cms-seed
 
 # 2. Copier la ligne PAYLOAD_API_KEY=... affichée dans .env
 
@@ -55,7 +55,7 @@ Le service `cms-seed` est dans le profil `tools` : il ne démarre jamais avec `u
 
 ```bash
 docker compose -f docker-compose.prod.yml build cms
-docker compose -f docker-compose.prod.yml --profile tools run --rm cms-seed
+docker compose -f docker-compose.prod.yml --profile tools run --rm iamfabriceg-bot-cms-seed
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
@@ -80,16 +80,17 @@ corepack pnpm docker:dev
 
 | Service | URL | Rôle |
 |---|---|---|
-| `bot` | http://localhost:31000/healthz | Bot Discord + webhooks |
-| `cms` | http://localhost:31001/admin | Admin Payload |
-| `cms` | http://localhost:31001/ | Front public (lecture seule) |
-| `mongo` | localhost:31017 | Base MongoDB |
+| `iamfabriceg-bot` | http://localhost:31000/healthz | Bot Discord + webhooks |
+| `iamfabriceg-bot-cms` | http://localhost:31001/admin | Admin Payload |
+| `iamfabriceg-bot-cms` | http://localhost:31001/ | Front public (lecture seule) |
+| `iamfabriceg-bot-mongo` | localhost:31017 | Base MongoDB |
 
 Convention de ports du projet, **identique en local, en Docker et sur le VPS** : `31000` (bot),
 `31001` (CMS), `31017` (MongoDB locale). Ces ports écartés des valeurs courantes évitent les
 conflits avec les autres projets. Les ports **internes** des conteneurs restent `3000`, `3001` et
-`27017` : `mongodb://mongo:27017/iamfabriceg_bot`, `http://bot:3000` et `http://cms:3001`
-restent inchangés, y compris le Forward Host de Nginx Proxy Manager.
+`27017` : `mongodb://iamfabriceg-bot-mongo:27017/iamfabriceg_bot`,
+`http://iamfabriceg-bot:3000` et `http://iamfabriceg-bot-cms:3001` restent inchangés, y compris le
+Forward Host de Nginx Proxy Manager (`iamfabriceg-bot-cms`).
 
 Le code est monté depuis l'hôte : les modifications sont visibles immédiatement (hot reload pour le CMS,
 redémarrage manuel du bot). Arrêt : `corepack pnpm docker:dev:down`.
@@ -162,7 +163,8 @@ WEBHOOK_SECRET=<même valeur dans le bot et le CMS>
 ```
 
 En Docker, `DATABASE_URI`, `PAYLOAD_URL` et `BOT_WEBHOOK_URL` sont surchargés automatiquement par les
-compose files (`mongo:27017`, `cms:3001`, `bot:3000`) ; les ports hôtes `31000`/`31001`/`31017`
+compose files (`iamfabriceg-bot-mongo:27017`, `iamfabriceg-bot-cms:3001`, `iamfabriceg-bot:3000`) ;
+les ports hôtes `31000`/`31001`/`31017`
 sont mappés vers ces ports internes. `PAYLOAD_PUBLIC_URL` reste l'URL du navigateur
 (`http://localhost:31001` en dev, domaine public en prod). `serverURL` demeure l'URL interne : c'est
 `csrf`/`cors` qui autorise l'origine du navigateur.
@@ -247,7 +249,7 @@ corepack pnpm twitch:subscribe <channel>
 corepack pnpm cms:dev          # CMS en local (port 31001)
 corepack pnpm cms:build        # build Next.js
 corepack pnpm cms:seed         # admin + clé API bot
-# équivalent Docker : docker compose -f docker-compose.dev.yml --profile tools run --rm cms-seed
+# équivalent Docker : docker compose -f docker-compose.dev.yml --profile tools run --rm iamfabriceg-bot-cms-seed
 corepack pnpm lint
 corepack pnpm test             # 29 tests node:test
 bash scripts/cms-smoke.sh      # login admin + écriture/restauration botSettings
@@ -256,7 +258,7 @@ corepack pnpm docker:prod
 ```
 
 > Sur cet environnement Windows, le binaire `pnpm` n'est pas sur le PATH : utiliser `corepack pnpm ...` quand
-> Corepack est disponible (Node ≤ 24), ou les commandes `docker compose ... run --rm cms-seed` ci-dessus.
+> Corepack est disponible (Node ≤ 24), ou les commandes `docker compose ... run --rm iamfabriceg-bot-cms-seed` ci-dessus.
 > Si les scripts échouent avec `'node' n'est pas reconnu`, ajouter `--script-shell=pwsh`.
 
 ## CI

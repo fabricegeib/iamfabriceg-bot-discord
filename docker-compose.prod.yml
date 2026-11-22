@@ -6,7 +6,7 @@ name: iamfabriceg-bot
 # Voir docs/DEPLOY-VPS.md pour la procédure complète.
 
 services:
-  mongo:
+  iamfabriceg-bot-mongo:
     image: mongo:8.2.4
     container_name: iamfabriceg-bot-mongo
     restart: unless-stopped
@@ -19,7 +19,7 @@ services:
       retries: 5
       start_period: 10s
 
-  bot:
+  iamfabriceg-bot:
     build:
       context: .
       dockerfile: Dockerfile
@@ -28,9 +28,9 @@ services:
     pull_policy: if_not_present
     container_name: iamfabriceg-bot-discord
     depends_on:
-      mongo:
+      iamfabriceg-bot-mongo:
         condition: service_healthy
-      cms:
+      iamfabriceg-bot-cms:
         condition: service_healthy
     env_file:
       - .env
@@ -38,12 +38,12 @@ services:
       NODE_ENV: production
       HOSTNAME: "0.0.0.0"
       PORT: "3000"
-      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
-      PAYLOAD_URL: http://cms:3001
+      DATABASE_URI: mongodb://iamfabriceg-bot-mongo:27017/iamfabriceg_bot
+      PAYLOAD_URL: http://iamfabriceg-bot-cms:3001
       PAYLOAD_PUBLIC_URL: ${DEPLOY_URL:-https://bot.iamfabriceg.xyz}
       # URL publique du callback Twitch EventSub (aucune autre URL n'est exposée).
       PUBLIC_URL: ${DEPLOY_URL:-https://bot.iamfabriceg.xyz}
-      BOT_WEBHOOK_URL: http://bot:3000
+      BOT_WEBHOOK_URL: http://iamfabriceg-bot:3000
     ports:
       # NPM atteint le conteneur via le réseau Docker ; ces ports restent locaux.
       - "127.0.0.1:31000:3000"
@@ -56,13 +56,13 @@ services:
     restart: unless-stopped
 
   # Usage ponctuel :
-  #   docker compose -f docker-compose.prod.yml -f docker-compose.vps.yml --profile tools run --rm cms-seed
-  cms-seed:
+  #   docker compose -f docker-compose.prod.yml -f docker-compose.vps.yml --profile tools run --rm iamfabriceg-bot-cms-seed
+  iamfabriceg-bot-cms-seed:
     image: ${REGISTRY:-registry.fabricegeib.com}/iamfabriceg-bot-cms:${IMAGE_TAG:-1.1.0-slim}
     container_name: iamfabriceg-bot-cms-seed
     profiles: ["tools"]
     depends_on:
-      mongo:
+      iamfabriceg-bot-mongo:
         condition: service_healthy
     env_file:
       - .env
@@ -71,16 +71,16 @@ services:
       HOSTNAME: "0.0.0.0"
       PORT: "3001"
       CMS_PORT: "3001"
-      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
-      PAYLOAD_URL: http://cms:3001
+      DATABASE_URI: mongodb://iamfabriceg-bot-mongo:27017/iamfabriceg_bot
+      PAYLOAD_URL: http://iamfabriceg-bot-cms:3001
       PAYLOAD_PUBLIC_URL: ${DEPLOY_URL:-https://bot.iamfabriceg.xyz}
       PUBLIC_URL: ${DEPLOY_URL:-https://bot.iamfabriceg.xyz}
-      BOT_WEBHOOK_URL: http://bot:3000
+      BOT_WEBHOOK_URL: http://iamfabriceg-bot:3000
     # L'image runtime ne contient pas pnpm : le seed y est compilé en JS au build.
     command: ["node", "cms/seed.mjs"]
     restart: "no"
 
-  cms:
+  iamfabriceg-bot-cms:
     build:
       context: .
       dockerfile: cms/Dockerfile
@@ -89,7 +89,7 @@ services:
     pull_policy: if_not_present
     container_name: iamfabriceg-bot-cms
     depends_on:
-      mongo:
+      iamfabriceg-bot-mongo:
         condition: service_healthy
     env_file:
       - .env
@@ -98,11 +98,11 @@ services:
       HOSTNAME: "0.0.0.0"
       PORT: "3001"
       CMS_PORT: "3001"
-      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
-      PAYLOAD_URL: http://cms:3001
+      DATABASE_URI: mongodb://iamfabriceg-bot-mongo:27017/iamfabriceg_bot
+      PAYLOAD_URL: http://iamfabriceg-bot-cms:3001
       PAYLOAD_PUBLIC_URL: ${DEPLOY_URL:-https://bot.iamfabriceg.xyz}
       PUBLIC_URL: ${DEPLOY_URL:-https://bot.iamfabriceg.xyz}
-      BOT_WEBHOOK_URL: http://bot:3000
+      BOT_WEBHOOK_URL: http://iamfabriceg-bot:3000
     ports:
       - "127.0.0.1:31001:3001"
     healthcheck:

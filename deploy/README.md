@@ -1,10 +1,9 @@
 # Dossier prêt pour le VPS
 
-**Avant de copier** : vérifie la ligne `DATABASE_URI` de `.env`. Les identifiants doivent être
-**encodés** dans l’URL (`!` → `%21`, `@` → `%40`, `#` → `%23`) et conserver `?authSource=admin`.
-Le mot de passe est déjà encodé dans le fichier fourni.
+**Rien à modifier avant le transfert.** Le `.env` contient déjà les secrets Discord/Payload,
+l’URI MongoDB **encodée** (`!` → `%21`) et `authSource=admin`. Ne pas le partager, ne pas le committer.
 
-Copier les fichiers **et l’archive** sur le VPS :
+## 1. Transfert (depuis ta machine)
 
 ```bash
 ssh debian@51.178.39.128 'mkdir -p ~/docker/iamfabriceg-bot'
@@ -12,26 +11,32 @@ scp -r deploy/. debian@51.178.39.128:~/docker/iamfabriceg-bot/
 scp backups/iamfabriceg-bot-2026-11-22.archive.gz debian@51.178.39.128:~/docker/iamfabriceg-bot/
 ```
 
-Il contient :
+## 2. Contenu du dossier
 
 | Fichier | Rôle |
 |---|---|
-| `docker-compose.yml` | La stack **bot + CMS uniquement** (aucun conteneur MongoDB), réseau NPM intégré |
-| `.env` | Tous les secrets, l’URI MongoDB externe encodée et le domaine — **ne pas committer, ne pas partager** |
+| `docker-compose.yml` | Stack **bot + CMS uniquement** (aucun conteneur MongoDB), réseau NPM intégré, `HOSTNAME=0.0.0.0` |
+| `.env` | Secrets, URI MongoDB externe encodée, domaine public — **ne pas committer** |
 | `.env.example` | Modèle commenté si tu dois recréer le `.env` |
 
-Ports hôtes du projet : `31000` (bot), `31001` (CMS), liés à `127.0.0.1`. Ports internes des
-conteneurs inchangés (`3000`/`3001`) : NPM vise toujours `cms:3001`.
+Noms de service (et alias DNS sur le réseau partagé) : `iamfabriceg-bot` et `iamfabriceg-bot-cms`.
+Ports hôtes : `31000` (bot), `31001` (CMS), liés à `127.0.0.1`. Ports internes inchangés
+(`3000`/`3001`) : NPM vise **`iamfabriceg-bot-cms:3001`**.
 
-Sur le VPS, la procédure complète est dans [`docs/DEPLOY-VPS.md`](../docs/DEPLOY-VPS.md).
-En résumé :
+## 3. Sur le VPS
 
 ```bash
 cd ~/docker/iamfabriceg-bot
-docker login registry.fabricegeib.com
-docker compose up -d
 
-# Importer dans TON conteneur MongoDB existant (nommé `mongodb`) :
+# Les noms de service ont changé : supprimer les anciens conteneurs du projet
+# (MongoDB externe n'est pas touchée, aucun volume n'est supprimé).
+docker compose down --remove-orphans
+
+docker login registry.fabricegeib.com
+docker network ls | grep nginx-proxy-manager
+# si absent : docker network create nginx-proxy-manager
+
+# import DANS ton conteneur MongoDB existant (nommé `mongodb`) :
 docker run --rm \
   --network container:mongodb \
   --env-file .env \
@@ -39,9 +44,28 @@ docker run --rm \
   mongo:8.2.4 sh -c \
   'MONGO_URI=$(printf "%s" "$DATABASE_URI" | sed "s#51.178.39.128#127.0.0.1#"); mongorestore --uri="$MONGO_URI" --archive=/backup/archive.gz --gzip --drop'
 
-docker compose restart bot cms
-# créer le Proxy Host dans Nginx Proxy Manager : cms:3001
+docker compose up -d
+docker compose ps
 ```
 
+Si la stack tournait déjà avec l’ancien fichier et que `down` échoue, ignore l’erreur et lance
+directement `docker compose up -d --force-recreate`.
+
+Vérifications :
+
+```bash
+curl -fsS http://127.0.0.1:31001/api/bot/healthz
+curl -fsS http://127.0.0.1:31000/healthz
+docker compose logs --no-color --tail=30 iamfabriceg-bot-cms
+# - Local: http://0.0.0.0:3001
+```
+
+## 4. Nginx Proxy Manager
+
+Proxy Host `bot.iamfabriceg.xyz` → **Forward Hostname `iamfabriceg-bot-cms`**, port `3001`
+(scheme `http`, Websockets activés, SSL + Force SSL).
+
+La procédure commentée est dans [`docs/DEPLOY-VPS.md`](../docs/DEPLOY-VPS.md).
+
 ⚠️ Ne jamais lancer le seed après l’import MongoDB : la base contient déjà `PAYLOAD_API_KEY`.
-Ce Compose ne contient volontairement aucun service `cms-seed` ni `mongo`.
+Ce Compose ne contient volontairement aucun service `iamfabriceg-bot-cms-seed` ni `iamfabriceg-bot-mongo`.

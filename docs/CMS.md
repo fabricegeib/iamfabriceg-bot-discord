@@ -27,7 +27,7 @@ en Docker et sur le VPS. Dans les conteneurs, les ports internes restent `3000` 
 Premier lancement (seed via Docker, sans pnpm local) :
 
 ```bash
-docker compose -f docker-compose.dev.yml --profile tools run --rm cms-seed
+docker compose -f docker-compose.dev.yml --profile tools run --rm iamfabriceg-bot-cms-seed
 # copier PAYLOAD_API_KEY=... dans .env
 docker compose -f docker-compose.dev.yml up -d --force-recreate bot
 ```
@@ -52,7 +52,7 @@ pré-rendu de `/_global-error` (`Cannot read properties of null (reading 'useCon
 
 ### Premier accès
 
-`pnpm cms:seed` — ou `docker compose -f docker-compose.dev.yml --profile tools run --rm cms-seed` — crée :
+`pnpm cms:seed` — ou `docker compose -f docker-compose.dev.yml --profile tools run --rm iamfabriceg-bot-cms-seed` — crée :
 
 - un utilisateur `bot@iamfabriceg.local` avec le mot de passe `SEED_ADMIN_PASSWORD` (`Admin1234!` par défaut) ;
 - une **clé API** affichée en console sous la forme `PAYLOAD_API_KEY=...` à copier dans `.env` ;
@@ -90,7 +90,7 @@ correspondre les deux, utilise le même pseudo dans `displayName` de ton compte 
 
 ### URLs et origines
 
-`serverURL` est l'URL **interne** service-à-service : `http://cms:3001` dans Docker. Le navigateur utilise
+`serverURL` est l'URL **interne** service-à-service : `http://iamfabriceg-bot-cms:3001` dans Docker. Le navigateur utilise
 `PAYLOAD_PUBLIC_URL` (`http://localhost:31001` en local, domaine public en prod). Payload ajoute
 automatiquement `serverURL` à `csrf`, mais **ignore le cookie** si l'origine `Origin:` de la requête n'y
 figure pas : tous les POST de l'admin tombent alors en 401/403. La configuration ajoute donc explicitement
@@ -176,9 +176,9 @@ SEED_ADMIN_PASSWORD=Admin1234!
 
 En Docker, les compose files surchargent automatiquement :
 
-- `DATABASE_URI=mongodb://mongo:27017/iamfabriceg_bot`
-- `PAYLOAD_URL=http://cms:3001`
-- `BOT_WEBHOOK_URL=http://bot:3000`
+- `DATABASE_URI=mongodb://iamfabriceg-bot-mongo:27017/iamfabriceg_bot`
+- `PAYLOAD_URL=http://iamfabriceg-bot-cms:3001`
+- `BOT_WEBHOOK_URL=http://iamfabriceg-bot:3000`
 - `PAYLOAD_PUBLIC_URL=http://localhost:31001` (dev) / `${PAYLOAD_PUBLIC_URL}` (prod)
 
 ## 2. Front public
@@ -313,7 +313,7 @@ services. Le bot vérifie avec `timingSafeEqual` et journalise l'événement. Si
 
 ### Spinner infini sur « Add Social Link » / POST 401-403
 
-Cause : l'origine du navigateur n'est pas dans la liste CSRF de Payload. `serverURL=http://cms:3001`
+Cause : l'origine du navigateur n'est pas dans la liste CSRF de Payload. `serverURL=http://iamfabriceg-bot-cms:3001`
 alors que le navigateur envoie `Origin: http://localhost:31001` : le cookie de session est ignoré, tous
 les POST admin échouent. Correctif : `PAYLOAD_PUBLIC_URL` + `csrf`/`cors` dans `payload.config.ts`, puis
 recréer le CMS. Vérification :

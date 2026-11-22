@@ -22,26 +22,27 @@ soit `iamfabriceg Bot` (affichage), soit `iamfabriceg-bot-` (technique).
 | Package npm racine | `iamfabriceg-bot-discord` | Doit rester identique au dépôt pour `pnpm --filter` |
 | Package npm CMS | `cms` | Nom de workspace interne, inchangé |
 | Projet Docker Compose | `iamfabriceg-bot` | `name:` dans les deux compose files |
-| Service Compose / bot | `bot` | Nom de service court, utilisé par `BOT_WEBHOOK_URL=http://bot:3000` |
-| Service Compose / CMS | `cms` | Nom de service court, utilisé par `PAYLOAD_URL=http://cms:3001` |
-| Service Compose / base | `mongo` | Nom de service court, utilisé par `DATABASE_URI=mongodb://mongo:27017/…` |
+| Service Compose / bot | `iamfabriceg-bot` | Alias DNS sur le réseau partagé, utilisé par `BOT_WEBHOOK_URL=http://iamfabriceg-bot:3000` |
+| Service Compose / CMS | `iamfabriceg-bot-cms` | Alias DNS utilisé par `PAYLOAD_URL` et NPM |
+| Service Compose / base | `iamfabriceg-bot-mongo` | Uniquement dans les Compose locaux |
+| Service Compose / seed | `iamfabriceg-bot-cms-seed` | Profil `tools`, jamais dans le Compose VPS |
 | Conteneur bot | `iamfabriceg-bot-discord` | `container_name` |
-| Conteneur CMS | `iamfabriceg-bot-cms` | `container_name` |
+| Conteneur CMS | `iamfabriceg-bot-cms` | `container_name` = alias DNS du service |
 | Conteneur MongoDB | `iamfabriceg-bot-mongo` | `container_name` |
-| Image bot | `iamfabriceg/bot-discord:latest` | Namespace Docker = pseudo |
-| Image CMS | `iamfabriceg/bot-cms:latest` | Namespace Docker = pseudo |
+| Image bot | `registry.fabricegeib.com/iamfabriceg-bot:1.1.0-slim` | Registre privé |
+| Image CMS | `registry.fabricegeib.com/iamfabriceg-bot-cms:1.1.0-slim` | Registre privé |
 | Volumes Docker | `iamfabriceg-bot-mongo-data`, `iamfabriceg-bot-node-modules`, `iamfabriceg-bot-cms-store`, `iamfabriceg-bot-cms-node-modules`, `iamfabriceg-bot-cms-next` | Préfixe systématique |
 | Base MongoDB | `iamfabriceg_bot` | Snake case (convention MongoDB) |
-| Utilisateur admin CMS | `bot@iamfabriceg.local` | Créé par `pnpm cms:seed` ou `docker compose ... run --rm cms-seed` |
+| Utilisateur admin CMS | `bot@iamfabriceg.local` | Créé par `pnpm cms:seed` ou `docker compose ... run --rm iamfabriceg-bot-cms-seed` |
 | `botSettings.botName` | `iamfabriceg Bot` | Valeur par défaut du global Payload |
 | `service` du `/healthz` bot | `iamfabriceg-bot` | Identifiant machine lisible |
 | Titre du front public | `iamfabriceg Bot` | Metadata Next.js |
 | Ports hôtes du projet | `31000` bot, `31001` CMS, `31017` Mongo local | Communs local / Docker / VPS |
 | URL locale bot | `http://127.0.0.1:31000` | — |
 | URL locale CMS | `http://127.0.0.1:31001` | Admin `/admin`, front `/` |
-| URL Docker bot | `http://bot:3000` | Port interne inchangé, depuis le réseau Compose |
-| URL Docker CMS | `http://cms:3001` | Port interne inchangé, depuis le réseau Compose |
-| `PAYLOAD_URL` | URL interne service-à-service | Bot → CMS (`http://cms:3001` en Docker) |
+| URL Docker bot | `http://iamfabriceg-bot:3000` | Alias du service, port interne inchangé |
+| URL Docker CMS | `http://iamfabriceg-bot-cms:3001` | Alias du service, port interne inchangé |
+| `PAYLOAD_URL` | URL interne service-à-service | Bot → CMS (`http://iamfabriceg-bot-cms:3001` en Docker) |
 | `PAYLOAD_PUBLIC_URL` | Origine navigateur / CSRF | `http://localhost:31001` en dev, domaine public en prod |
 
 Règles de nommage Payload : slugs de collections au pluriel en camelCase (`commandUsages`, `discordRoles`,

@@ -97,12 +97,16 @@ docker compose ps
 
 **Deux conteneurs seulement** : `iamfabriceg-bot-discord` et `iamfabriceg-bot-cms`, tous deux
 `healthy` en ~30 s. Il n’y a volontairement **aucun** `iamfabriceg-bot-mongo`, aucun volume
-MongoDB et aucun service `cms-seed`. Les images sont tirées du registre si besoin
+MongoDB et aucun service `iamfabriceg-bot-cms-seed`. Les images sont tirées du registre si besoin
 (`pull_policy: if_not_present`).
 
 Ports hôtes du projet (identiques en local et en prod) : `31000` pour le bot, `31001` pour le
 CMS, tous deux liés à `127.0.0.1`. Les ports internes des conteneurs restent `3000`/`3001`, donc
-NPM continue de viser `cms:3001`.
+NPM vise **`iamfabriceg-bot-cms:3001`** (alias DNS unique sur le réseau partagé).
+
+> Si tu remplaces un ancien déploiement, lance `docker compose down --remove-orphans` avant
+> `up -d` : les clés de service sont passées de `bot`/`cms` à `iamfabriceg-bot`/
+> `iamfabriceg-bot-cms`, et le nom `iamfabriceg-bot-cms` existait déjà comme `container_name`.
 
 À ce stade la base importée n’est pas encore restaurée : c’est l’étape 5.
 
@@ -133,7 +137,8 @@ docker run --rm --network container:mongodb --env-file .env mongo:8.2.4 sh -c \
 > c’est bien une base dédiée. Les autres bases de ta MongoDB ne sont pas modifiées.
 >
 > ⚠️ **Ne jamais lancer le seed après l’import** : il régénérerait `PAYLOAD_API_KEY` et le bot ne
-> pourrait plus s’authentifier. Le Compose de `deploy/` ne contient aucun service `cms-seed`.
+> pourrait plus s’authentifier. Le Compose de `deploy/` ne contient aucun service
+> `iamfabriceg-bot-cms-seed`.
 
 ---
 
@@ -142,12 +147,12 @@ docker run --rm --network container:mongodb --env-file .env mongo:8.2.4 sh -c \
 Ils ont démarré avant la restauration : on les redémarre pour qu’ils rechargent les données.
 
 ```bash
-docker compose restart bot cms
+docker compose restart iamfabriceg-bot iamfabriceg-bot-cms
 docker compose ps
 ```
 
 > Toute modification de `.env` (MongoDB, domaine, clé API, secrets) impose :
-> `docker compose up -d --force-recreate bot cms`.
+> `docker compose up -d --force-recreate iamfabriceg-bot iamfabriceg-bot-cms`.
 
 ---
 
@@ -159,7 +164,7 @@ Ouvre NPM → **Proxy Hosts** → **Add Proxy Host**, onglet **Details** :
 |---|---|
 | Domain Names | `bot.iamfabriceg.xyz` |
 | Scheme | `http` |
-| Forward Hostname / IP | `cms` |
+| Forward Hostname / IP | `iamfabriceg-bot-cms` |
 | Forward Port | `3001` |
 | Block Common Exploits | activé (recommandé) |
 | Websockets Support | activé (recommandé) |
@@ -242,10 +247,10 @@ Retour arrière : remettre `1.1.0` à la place de `1.1.0-slim`, puis relancer le
 | `ECONNREFUSED` sur l’import | Le conteneur ciblé n’écoute pas sur `27017` ; vérifier son nom et son port avec `docker ps` |
 | `unauthorized: authentication required` au `pull` | `docker login registry.fabricegeib.com` |
 | `network nginx-proxy-manager not found` | `docker network create nginx-proxy-manager` |
-| 502 dans NPM | Vérifier `Forward Hostname = cms` et `Port = 3001`, puis reload du Proxy Host |
+| 502 dans NPM | Vérifier `Forward Hostname = iamfabriceg-bot-cms` et `Port = 3001`, puis reload du Proxy Host |
 | Admin : spinner infini sur les POST | `DEPLOY_URL` doit être l’URL publique HTTPS ; `docker compose up -d --force-recreate cms` |
 | Bot « non configuré » pour une API | Clé absente du `.env` ; compléter puis `up -d --force-recreate bot` |
-| Stats vides | Import MongoDB manquant : rejouer l’étape 5 puis `restart bot cms` |
+| Stats vides | Import MongoDB manquant : rejouer l’étape 5 puis `restart iamfabriceg-bot iamfabriceg-bot-cms` |
 | Palette au 2ᵉ tap sur iPhone | Vérifier le digest CMS `ca7c312e…` (`1.1.0-slim`) |
 | Cercles rouges / safe areas | Retirer puis rajouter la web app depuis l’écran d’accueil iOS |
 

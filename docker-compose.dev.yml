@@ -5,7 +5,7 @@ name: iamfabriceg-bot
 # Ports hôtes du projet : 31000 bot, 31001 CMS, 31017 Mongo. Ports internes inchangés.
 
 services:
-  mongo:
+  iamfabriceg-bot-mongo:
     image: mongo:8.2.4
     container_name: iamfabriceg-bot-mongo
     restart: unless-stopped
@@ -20,11 +20,11 @@ services:
       retries: 5
       start_period: 10s
 
-  bot:
+  iamfabriceg-bot:
     image: node:26-alpine
     container_name: iamfabriceg-bot-discord
     depends_on:
-      mongo:
+      iamfabriceg-bot-mongo:
         condition: service_healthy
     env_file:
       - .env
@@ -32,10 +32,10 @@ services:
       NODE_ENV: development
       HOSTNAME: "0.0.0.0"
       PORT: "3000"
-      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
-      PAYLOAD_URL: http://cms:3001
+      DATABASE_URI: mongodb://iamfabriceg-bot-mongo:27017/iamfabriceg_bot
+      PAYLOAD_URL: http://iamfabriceg-bot-cms:3001
       PAYLOAD_PUBLIC_URL: http://localhost:31001
-      BOT_WEBHOOK_URL: http://bot:3000
+      BOT_WEBHOOK_URL: http://iamfabriceg-bot:3000
     working_dir: /app
     volumes:
       - ./:/app
@@ -54,13 +54,13 @@ services:
       start_period: 20s
     restart: unless-stopped
 
-  # Usage ponctuel : docker compose -f docker-compose.dev.yml --profile tools run --rm cms-seed
-  cms-seed:
+  # Usage ponctuel : docker compose -f docker-compose.dev.yml --profile tools run --rm iamfabriceg-bot-cms-seed
+  iamfabriceg-bot-cms-seed:
     image: node:26-alpine
     container_name: iamfabriceg-bot-cms-seed
     profiles: ["tools"]
     depends_on:
-      mongo:
+      iamfabriceg-bot-mongo:
         condition: service_healthy
     env_file:
       - .env
@@ -69,10 +69,10 @@ services:
       HOSTNAME: "0.0.0.0"
       PORT: "3001"
       CMS_PORT: "3001"
-      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
-      PAYLOAD_URL: http://cms:3001
+      DATABASE_URI: mongodb://iamfabriceg-bot-mongo:27017/iamfabriceg_bot
+      PAYLOAD_URL: http://iamfabriceg-bot-cms:3001
       PAYLOAD_PUBLIC_URL: http://localhost:31001
-      BOT_WEBHOOK_URL: http://bot:3000
+      BOT_WEBHOOK_URL: http://iamfabriceg-bot:3000
     working_dir: /app
     volumes:
       - ./:/app
@@ -84,11 +84,11 @@ services:
       pnpm --filter cms seed"
     restart: "no"
 
-  cms:
+  iamfabriceg-bot-cms:
     image: node:26-alpine
     container_name: iamfabriceg-bot-cms
     depends_on:
-      mongo:
+      iamfabriceg-bot-mongo:
         condition: service_healthy
     env_file:
       - .env
@@ -97,10 +97,10 @@ services:
       HOSTNAME: "0.0.0.0"
       PORT: "3001"
       CMS_PORT: "3001"
-      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
-      PAYLOAD_URL: http://cms:3001
+      DATABASE_URI: mongodb://iamfabriceg-bot-mongo:27017/iamfabriceg_bot
+      PAYLOAD_URL: http://iamfabriceg-bot-cms:3001
       PAYLOAD_PUBLIC_URL: http://localhost:31001
-      BOT_WEBHOOK_URL: http://bot:3000
+      BOT_WEBHOOK_URL: http://iamfabriceg-bot:3000
     working_dir: /app
     volumes:
       - ./:/app
