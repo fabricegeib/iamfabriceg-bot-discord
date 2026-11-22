@@ -159,10 +159,11 @@ docker pull registry.fabricegeib.com/iamfabriceg-bot-cms:1.1.0
 docker pull registry.fabricegeib.com/iamfabriceg-bot:1.1.0
 ```
 
-`docker-compose.prod.yml` référence les images du registre (ses sections `build` ne servent
-qu’au `docker:prod` local avec `--build`) ; `docker-compose.vps.yml` ajoute le réseau
-`nginx-proxy-manager`. Les ports hôte sont liés à `127.0.0.1` : seuls NPM et les healthchecks
-locaux y accèdent.
+`docker-compose.prod.yml` référence les images du registre avec `pull_policy: if_not_present`
+(canonicalisé `missing` par Compose) : sur le VPS, Compose tire l’image du registre si elle est
+absente ; en local, `pnpm docker:prod` utilise `--build` et force la construction depuis les
+Dockerfiles. `docker-compose.vps.yml` ajoute le réseau `nginx-proxy-manager`. Les ports hôte
+sont liés à `127.0.0.1` : seuls NPM et les healthchecks locaux y accèdent.
 
 ---
 

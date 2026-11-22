@@ -24,6 +24,8 @@ services:
       context: .
       dockerfile: Dockerfile
     image: ${REGISTRY:-registry.fabricegeib.com}/iamfabriceg-bot:${IMAGE_TAG:-1.1.0}
+    # Sur le VPS, tirer l'image du registre ; `--build` (docker:prod local) force la construction.
+    pull_policy: if_not_present
     container_name: iamfabriceg-bot-discord
     depends_on:
       mongo:
@@ -78,6 +80,8 @@ services:
       context: .
       dockerfile: cms/Dockerfile
     image: ${REGISTRY:-registry.fabricegeib.com}/iamfabriceg-bot-cms:${IMAGE_TAG:-1.1.0}
+    # Sur le VPS, tirer l'image du registre ; `--build` (docker:prod local) force la construction.
+    pull_policy: if_not_present
     container_name: iamfabriceg-bot-cms
     depends_on:
       mongo:
