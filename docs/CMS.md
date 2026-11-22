@@ -64,6 +64,27 @@ Rôles : `admin` (tout), `editor` (contenus et globals), `bot` (clé API pour le
 « Add Social Link » nécessite un rôle `admin`/`editor` et une session valide, donc une origine autorisée
 (voir [Dépannage](#6-dépannage)).
 
+### Compte admin personnel et liaison Discord
+
+Deux collections distinctes, à ne pas confondre :
+
+| Collection | Rôle | Lien Discord |
+|---|---|---|
+| `users` | Comptes de connexion à `/admin` (email, mot de passe, rôle, clé API) | Aucun lien automatique |
+| `profiles` | Profils des membres (ID Discord, pseudo, points, fidélité) | Créés par la commande `/profil` |
+
+**Passer à ton propre compte admin** : connecte-toi avec `bot@iamfabriceg.local`, puis
+`/admin` → **Users** → **Add New** : ton email, un mot de passe fort, rôle `admin`. Reconnecte-toi
+avec ce compte, puis change aussi le mot de passe de `bot@iamfabriceg.local`.
+**Ne supprime pas ce dernier compte** : c’est lui qui porte `PAYLOAD_API_KEY` utilisée par le bot ;
+le supprimer casserait tous les endpoints `/api/bot/*`.
+
+**Lier ton compte Discord** : exécute `/profil pseudo:TonPseudo` dans Discord. Le bot crée ou met
+à jour un document `profiles` avec ton `discordId`, ton pseudo et tes statistiques de fidélité ;
+tu le retrouves dans `/admin` → **Profiles**. Cette commande ne touche pas à `users` : pour faire
+correspondre les deux, utilise le même pseudo dans `displayName` de ton compte `users` et dans
+`username` du profil.
+
 ### URLs et origines
 
 `serverURL` est l'URL **interne** service-à-service : `http://cms:3001` dans Docker. Le navigateur utilise

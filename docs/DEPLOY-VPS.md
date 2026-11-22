@@ -24,15 +24,15 @@ déjà publiées.
 Depuis ta machine (remplace `USER` et `IP_VPS`) :
 
 ```powershell
-ssh USER@IP_VPS 'mkdir -p ~/iamfabriceg-bot'
-scp -r deploy/. USER@IP_VPS:~/iamfabriceg-bot/
-scp backups/iamfabriceg-bot-2026-11-22.archive.gz USER@IP_VPS:~/iamfabriceg-bot/
+ssh USER@IP_VPS 'mkdir -p ~/docker/iamfabriceg-bot'
+scp -r deploy/. USER@IP_VPS:~/docker/iamfabriceg-bot/
+scp backups/iamfabriceg-bot-2026-11-22.archive.gz USER@IP_VPS:~/docker/iamfabriceg-bot/
 ```
 
 Puis, sur le VPS :
 
 ```bash
-cd ~/iamfabriceg-bot
+cd ~/docker/iamfabriceg-bot
 ls -la            # docker-compose.yml, .env, .env.example, README.md, archive .gz
 ```
 
@@ -166,9 +166,13 @@ Depuis un navigateur :
 
 - `/` : le front avec les filtres **Tout / Jeux / Commandes / Actualités / API**.
 - `/admin` : connexion avec le compte du seed (`bot@iamfabriceg.local` et le mot de passe
-  utilisé lors du seed local). **Change ce mot de passe immédiatement.**
+  utilisé lors du seed local). **Change ce mot de passe immédiatement**, crée ton propre compte
+  `admin` et conserve le compte `bot` qui porte la clé API (voir
+  [`docs/CMS.md`](./CMS.md#compte-admin-personnel-et-liaison-discord)).
 - Sur iPhone : la palette doit s’ouvrir **au premier tap** et le champ occuper toute la largeur.
-- Sur Discord : une commande simple (`/ping`) doit répondre.
+  Le correctif est bien présent dans les images `1.1.0-slim` (commit `7f135f6`).
+- Sur Discord : `/ping` doit répondre, et `/profil pseudo:TonPseudo` doit créer ton profil
+  visible dans `/admin` → **Profiles**.
 
 ---
 

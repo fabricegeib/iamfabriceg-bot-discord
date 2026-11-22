@@ -99,10 +99,10 @@ redémarrage manuel du bot). Arrêt : `corepack pnpm docker:dev:down`.
 corepack pnpm docker:prod
 
 # VPS : copier le dossier prêt à l'emploi, puis une seule commande sur le VPS
-ssh USER@IP_VPS 'mkdir -p ~/iamfabriceg-bot'
-scp -r deploy/. USER@IP_VPS:~/iamfabriceg-bot/
+ssh USER@IP_VPS 'mkdir -p ~/docker/iamfabriceg-bot'
+scp -r deploy/. USER@IP_VPS:~/docker/iamfabriceg-bot/
 # sur le VPS :
-cd ~/iamfabriceg-bot && docker compose up -d
+cd ~/docker/iamfabriceg-bot && docker compose up -d
 ```
 
 Images publiées (optimisées) : `registry.fabricegeib.com/iamfabriceg-bot:1.1.0-slim` (bot,

@@ -3,8 +3,8 @@
 Copier **ce dossier entier** sur le VPS :
 
 ```bash
-ssh USER@IP 'mkdir -p ~/iamfabriceg-bot'
-scp -r deploy/. USER@IP:~/iamfabriceg-bot/
+ssh debian@51.178.39.128 'mkdir -p ~/docker/iamfabriceg-bot'
+scp -r deploy/. debian@51.178.39.128:~/docker/iamfabriceg-bot/
 ```
 
 Il contient :
@@ -19,7 +19,7 @@ Sur le VPS, la procédure complète est dans [`docs/DEPLOY-VPS.md`](../docs/DEPL
 En résumé :
 
 ```bash
-cd ~/iamfabriceg-bot
+cd ~/docker/iamfabriceg-bot
 docker compose up -d
 # importer l'archive MongoDB (voir le guide)
 docker compose restart bot cms
