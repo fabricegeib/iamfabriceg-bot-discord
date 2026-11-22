@@ -13,7 +13,8 @@
   `nginx-proxy-manager` (c’est le réseau par défaut de la plupart des installs NPM).
 - Le domaine `bot.iamfabriceg.xyz` avec un enregistrement **A** vers l’IP du VPS.
 - Les identifiants du registre privé `registry.fabricegeib.com`.
-- Les identifiants de ta **MongoDB existante** (`mongodb://xxx:xxx@51.178.39.128:27017/?authSource=admin`).
+- Ta **MongoDB existante** : conteneur nommé `mongodb`, image `mongo:8.2.4`, URI
+  `mongodb://xxx:xxx@51.178.39.128:27017/?authSource=admin` (identifiants encodés dans `deploy/.env`).
 - L’archive MongoDB `backups/iamfabriceg-bot-2026-11-22.archive.gz`.
 
 Rien d’autre : pas de code source, pas de pnpm, pas de build sur le VPS, pas de nouveau MongoDB.
@@ -73,7 +74,7 @@ docker login registry.fabricegeib.com
 # Tester l'accès à la MongoDB existante avant de lancer la stack.
 # Le conteneur jetable partage le réseau de ton conteneur `mongodb` :
 # 127.0.0.1:27017 y désigne directement ta MongoDB, sans port public.
-docker run --rm --network container:mongodb --env-file .env mongo:8 sh -c \
+docker run --rm --network container:mongodb --env-file .env mongo:8.2.4 sh -c \
   'MONGO_URI=$(printf "%s" "$DATABASE_URI" | sed "s#51.178.39.128#127.0.0.1#"); mongosh "$MONGO_URI" --quiet --eval "printjson(db.adminCommand({ping:1}))"'
 ```
 
@@ -120,11 +121,11 @@ docker run --rm \
   --network container:mongodb \
   --env-file .env \
   -v "$PWD/iamfabriceg-bot-2026-11-22.archive.gz:/backup/archive.gz:ro" \
-  mongo:8 sh -c \
+  mongo:8.2.4 sh -c \
   'MONGO_URI=$(printf "%s" "$DATABASE_URI" | sed "s#51.178.39.128#127.0.0.1#"); mongorestore --uri="$MONGO_URI" --archive=/backup/archive.gz --gzip --drop'
 
 # Contrôle rapide, toujours dans ton conteneur MongoDB :
-docker run --rm --network container:mongodb --env-file .env mongo:8 sh -c \
+docker run --rm --network container:mongodb --env-file .env mongo:8.2.4 sh -c \
   'MONGO_URI=$(printf "%s" "$DATABASE_URI" | sed "s#51.178.39.128#127.0.0.1#"); mongosh "$MONGO_URI" --quiet --eval "printjson({collections:db.getCollectionNames().length, users:db.users.countDocuments({}), games:db.games.countDocuments({})})"'
 ```
 

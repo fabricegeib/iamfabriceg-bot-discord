@@ -7,7 +7,7 @@ name: iamfabriceg-bot
 
 services:
   mongo:
-    image: mongo:8
+    image: mongo:8.2.4
     container_name: iamfabriceg-bot-mongo
     restart: unless-stopped
     volumes:

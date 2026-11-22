@@ -36,7 +36,7 @@ docker run --rm \
   --network container:mongodb \
   --env-file .env \
   -v "$PWD/iamfabriceg-bot-2026-11-22.archive.gz:/backup/archive.gz:ro" \
-  mongo:8 sh -c \
+  mongo:8.2.4 sh -c \
   'MONGO_URI=$(printf "%s" "$DATABASE_URI" | sed "s#51.178.39.128#127.0.0.1#"); mongorestore --uri="$MONGO_URI" --archive=/backup/archive.gz --gzip --drop'
 
 docker compose restart bot cms
