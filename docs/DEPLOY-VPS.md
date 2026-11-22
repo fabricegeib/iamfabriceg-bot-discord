@@ -111,6 +111,10 @@ docker exec iamfabriceg-bot-mongo mongorestore `
   --archive=/tmp/iamfabriceg-bot.archive.gz --gzip --dryRun
 ```
 
+**Archive produite le 2026-11-22** : `backups/iamfabriceg-bot-2026-11-22.archive.gz`
+(10 147 octets, SHA-256 `390180301D0CFE0027009CFF388D2DA57B18160F5B60D1F24E4466A49F7EFA1F`).
+`mongorestore --dryRun` validé : `dry run completed`, 0 document en échec.
+
 > **Secrets à conserver identiques sur le VPS** : `PAYLOAD_SECRET`, `PAYLOAD_API_KEY`,
 > `WEBHOOK_SECRET`, `DISCORD_TOKEN`. La base importée contient les clés API chiffrées :
 > changer `PAYLOAD_SECRET` rendrait les sessions et clés invalides.
@@ -155,9 +159,10 @@ docker pull registry.fabricegeib.com/iamfabriceg-bot-cms:1.1.0
 docker pull registry.fabricegeib.com/iamfabriceg-bot:1.1.0
 ```
 
-`docker-compose.prod.yml` tire les images du registre, `docker-compose.vps.yml` ajoute
-le réseau `nginx-proxy-manager`. Les ports hôte sont liés à `127.0.0.1` : seuls NPM et
-les healthchecks locaux y accèdent.
+`docker-compose.prod.yml` référence les images du registre (ses sections `build` ne servent
+qu’au `docker:prod` local avec `--build`) ; `docker-compose.vps.yml` ajoute le réseau
+`nginx-proxy-manager`. Les ports hôte sont liés à `127.0.0.1` : seuls NPM et les healthchecks
+locaux y accèdent.
 
 ---
 

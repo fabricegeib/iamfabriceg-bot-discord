@@ -15,3 +15,6 @@ coverage/
 *.log
 *.Identifier
 .DS_Store
+
+# Exports MongoDB locaux (données + secrets potentiels)
+backups/

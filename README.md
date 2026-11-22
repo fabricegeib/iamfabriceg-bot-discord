@@ -8,6 +8,7 @@ Bot Discord personnel de [iamfabriceg](https://iamfabriceg.xyz), écrit en **Com
 >
 > Voir [`docs/NOMENCLATURE.md`](./docs/NOMENCLATURE.md) pour le nommage, [`PLAN.md`](./PLAN.md) pour le plan,
 > et [`docs/PAYLOAD.md`](./docs/PAYLOAD.md), [`docs/CMS.md`](./docs/CMS.md), [`docs/TWITCH.md`](./docs/TWITCH.md) pour les intégrations.
+> Déploiement VPS, registre Docker et migration MongoDB : [`docs/DEPLOY-VPS.md`](./docs/DEPLOY-VPS.md).
 
 ## ⚠️ Contraintes en vigueur
 
@@ -94,12 +95,18 @@ redémarrage manuel du bot). Arrêt : `corepack pnpm docker:dev:down`.
 ## Production avec Docker
 
 ```bash
+# Local : construit les images depuis les Dockerfiles
 corepack pnpm docker:prod
-# ou : docker compose -f docker-compose.prod.yml up -d --build
+
+# VPS : tire les images du registre privé et les connecte à Nginx Proxy Manager
+docker compose -f docker-compose.prod.yml -f docker-compose.vps.yml up -d
 ```
 
-Les images `iamfabriceg/bot-discord:latest` et `iamfabriceg/bot-cms:latest` sont construites depuis `Dockerfile` et
-`cms/Dockerfile`. Le bot attend que le CMS et MongoDB soient `healthy`. Arrêt : `corepack pnpm docker:prod:down`.
+Images publiées : `registry.fabricegeib.com/iamfabriceg-bot:1.1.0` (bot) et
+`registry.fabricegeib.com/iamfabriceg-bot-cms:1.1.0` (CMS + admin + front), construites depuis
+`Dockerfile` et `cms/Dockerfile`. Le bot attend que le CMS et MongoDB soient `healthy`.
+Procédure complète (build/push, export MongoDB, reverse proxy, vérifications, rollback) :
+[`docs/DEPLOY-VPS.md`](./docs/DEPLOY-VPS.md). Arrêt : `corepack pnpm docker:prod:down`.
 
 ## Administration Payload
 

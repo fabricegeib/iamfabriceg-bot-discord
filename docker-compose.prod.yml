@@ -20,6 +20,9 @@ services:
       start_period: 10s
 
   bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: ${REGISTRY:-registry.fabricegeib.com}/iamfabriceg-bot:${IMAGE_TAG:-1.1.0}
     container_name: iamfabriceg-bot-discord
     depends_on:
@@ -71,6 +74,9 @@ services:
     restart: "no"
 
   cms:
+    build:
+      context: .
+      dockerfile: cms/Dockerfile
     image: ${REGISTRY:-registry.fabricegeib.com}/iamfabriceg-bot-cms:${IMAGE_TAG:-1.1.0}
     container_name: iamfabriceg-bot-cms
     depends_on:
