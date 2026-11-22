@@ -2,9 +2,13 @@
 
 ## 1. Application Twitch
 
-1. Créez une application sur <https://dev.twitch.tv/console/apps>.
+1. Créez une application sur <https://dev.twitch.tv/console/apps> avec comme **OAuth Redirect URL**
+   `http://localhost` (ou `http://localhost:3000`). Le bot utilise uniquement `client_credentials` :
+   cette URL de redirect n'est jamais appelée, elle sert juste à enregistrer l'application.
 2. Renseignez `TWITCH_CLIENT_ID` et `TWITCH_CLIENT_SECRET` dans `.env`.
-3. Définissez `PUBLIC_URL` avec l'URL publique du bot (ex. `https://bot.exemple.com`), car EventSub exige un **callback HTTPS**.
+3. Définissez `PUBLIC_URL` avec l'URL publique du bot (ex. `https://bot.iamfabriceg.xyz`), car EventSub
+   exige un **callback HTTPS**. En Docker, `PUBLIC_URL` est automatiquement aligné sur `DEPLOY_URL` ;
+   ne mettez pas l'URL de prod dans l'OAuth Redirect URL de la console Twitch.
 
 Le bot obtient un app token OAuth `client_credentials` et le met en cache 50 minutes.
 

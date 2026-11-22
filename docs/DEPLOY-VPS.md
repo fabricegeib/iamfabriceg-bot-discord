@@ -143,7 +143,7 @@ Voir §4 et §5 : deux images publiées avec digests, archive MongoDB validée p
 |---|---|---|---|
 | `FORTNITE_API_KEY` | <https://dash.fortnite-api.com> → compte → **API key** | `/fortnite stats` (Battle Royale) | ✅ déjà renseignée |
 | `RAWG_API_KEY` | <https://rawg.io/apidocs> → sign up → **API key** (20 000 req/mois) | Fiches détaillées `/games info` | ⚪ à créer si souhaité |
-| `RIOT_API_KEY` | <https://developer.riotgames.com> → **dev key** (24 h, renouvelable ; production à faire valider) | `/riot` | ⚪ à créer si souhaité |
+| `RIOT_API_KEY` | <https://developer.riotgames.com> → **dev key** (24 h, local uniquement) ou **production key** (sur demande, §3.5) | `/riot` | ⚪ laisser vide en prod tant que la clé prod n’est pas approuvée |
 | `STEAM_API_KEY` | <https://steamcommunity.com/dev/apikey> → domaine `localhost` puis ton domaine de prod | `/steam` | ⚪ à créer si souhaité |
 | `TWITCH_CLIENT_ID`<br>`TWITCH_CLIENT_SECRET` | <https://dev.twitch.tv/console> → **Register Your Application** → OAuth Redirect `http://localhost` → copier Client ID + **New Secret** | `/twitch` et EventSub | ⚪ à créer si souhaité (§3.4) |
 
@@ -163,15 +163,54 @@ Si l’un de ces secrets manquait, le régénérer **localement**, le mettre dan
 refaire le seed uniquement en local et retransférer l’archive. Sur une base déjà importée,
 ne jamais changer `PAYLOAD_SECRET` ni `PAYLOAD_API_KEY` sans recopier la nouvelle clé partout.
 
-### 3.4 Cas particulier Twitch
+### 3.4 Cas particulier Twitch — redirect URL ≠ callback EventSub
 
-1. Créer l’application dans la console Twitch avec un OAuth Redirect `http://localhost`.
-2. Copier Client ID et Client Secret dans `.env`.
-3. Définir `DEPLOY_URL=https://bot.iamfabriceg.xyz` (déjà la valeur par défaut du Compose prod).
-4. Exposer le callback : soit un **second Proxy Host** `bot-api.iamfabriceg.xyz` →
+Ce sont **deux URLs différentes**, à ne pas confondre :
+
+| Champ | Valeur | Rôle |
+|---|---|---|
+| **OAuth Redirect URL** (console Twitch) | `http://localhost` — ou `http://localhost:3000` (exemple officiel) | Uniquement si tu implémentes un flux OAuth *utilisateur*. Le bot n’en a pas besoin. |
+| **EventSub callback** (`DEPLOY_URL` / `PUBLIC_URL`) | `https://bot.iamfabriceg.xyz/webhooks/twitch` | URL HTTPS publique vers le serveur HTTP du bot, pour les alertes. |
+
+Le bot utilise exclusivement le flux **`client_credentials`** (`src/services/providers/twitch.js`) :
+il ne demande jamais de token utilisateur. La redirect URL de la console sert donc seulement à
+créer l’application ; `http://localhost` suffit, **avec ou sans port** (Twitch accepte les ports
+statiques, par exemple `http://localhost:3000`). Inutile d’y mettre l’URL de production. Tu peux
+ajouter `https://bot.iamfabriceg.xyz` comme seconde URL plus tard si tu ajoutes un OAuth utilisateur.
+
+Procédure :
+
+1. Créer l’application sur <https://dev.twitch.tv/console/apps> avec OAuth Redirect `http://localhost`
+   (ou `http://localhost:3000`), catégorie au choix.
+2. Copier **Client ID** et générer un **New Secret** dans `.env`.
+3. Laisser `DEPLOY_URL=https://bot.iamfabriceg.xyz` (valeur par défaut du Compose prod). En local,
+   le callback EventSub ne peut pas fonctionner : Twitch exige un HTTPS public. La commande
+   `/twitch`, elle, fonctionne déjà en local avec le seul app token.
+4. Exposer le callback en prod : soit un **second Proxy Host** `bot-api.iamfabriceg.xyz` →
    `iamfabriceg-bot-discord:3000`, soit une règle **Advanced** dans NPM qui envoie
-   `/webhooks/twitch` vers le bot. Le callback est `${DEPLOY_URL}/webhooks/twitch`.
+   `/webhooks/twitch` vers le bot.
 5. Souscrire aux événements : `node src/tasks/subscribe-twitch.js` (script `pnpm twitch:subscribe`).
+
+### 3.5 Cas particulier Riot — dev key interdite en public
+
+Le message affiché par Riot est normal : la **Development API Key** est réservée au développement,
+expire après **24 h**, est fortement limitée en débit et **ne doit jamais être utilisée par un
+produit public**. Un bot Discord déployé sur VPS est un produit public.
+
+Deux options :
+
+1. **Recommandé maintenant** : laisser `RIOT_API_KEY=` vide en production. La commande `/riot`
+   répond `⚙️ Riot est désactivé : la variable RIOT_API_KEY n'est pas configurée.` ; les 17 autres
+   intégrations et toutes les commandes du bot fonctionnent normalement.
+2. **Demander une Production API Key** dans le Developer Portal Riot : créer une application,
+   décrire le cas d’usage (par exemple « affichage des statistiques du joueur »), fournir un lien
+   vers un site/prototype fonctionnel (ici `https://bot.iamfabriceg.xyz/` et sa documentation),
+   puis attendre l’approbation. Les clés de production sont limitées à un seul produit et exigent
+   l’HTTPS — c’est le cas ici, le bot appelle l’API côté serveur. Une fois la clé obtenue, la
+   copier dans le `.env` du VPS puis `--force-recreate bot`.
+
+N’utilise jamais la clé de dev sur le VPS, même temporairement : elle expirerait au bout de 24 h
+et pourrait entraîner la révocation de l’accès API.
 
 Les webhooks Payload et les actions du dashboard utilisent `http://bot:3000` **à l’intérieur**
 du réseau Docker : aucune exposition publique supplémentaire n’est requise pour eux.
