@@ -4,24 +4,27 @@ const { riot } = require("../../services/providers");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("riot")
-    .setDescription("Statistiques League of Legends")
-    .setDescriptionLocalizations({ fr: "Statistiques League of Legends" })
-    .addStringOption((option) => option.setName("invocateur").setDescription("Nom d'invocateur").setRequired(true))
+    .setDescription("Show a League of Legends profile")
+    .setDescriptionLocalizations({ fr: "Affiche un profil League of Legends. Ex. : /riot invocateur:iamfabriceg" })
+    .addStringOption((option) => option.setName("invocateur").setDescription("Summoner name (e.g. iamfabriceg)").setDescriptionLocalizations({ fr: "Nom d'invocateur (ex. : iamfabriceg)" }).setRequired(true))
     .addStringOption((option) =>
       option
         .setName("region")
-        .setDescription("Région (euw1 par défaut)")
+        .setDescription("Region (default: euw1)")
+        .setDescriptionLocalizations({ fr: "Région (défaut : euw1)" })
         .addChoices(
-          { name: "EUW", value: "euw1" },
-          { name: "EUN", value: "eun1" },
-          { name: "NA", value: "na1" },
-          { name: "BR", value: "br1" },
-          { name: "JP", value: "jp1" },
-          { name: "KR", value: "kr" }
+          { name: "EUW", nameLocalizations: { fr: "EUW" }, value: "euw1" },
+          { name: "EUN", nameLocalizations: { fr: "EUN" }, value: "eun1" },
+          { name: "NA", nameLocalizations: { fr: "NA" }, value: "na1" },
+          { name: "BR", nameLocalizations: { fr: "BR" }, value: "br1" },
+          { name: "JP", nameLocalizations: { fr: "JP" }, value: "jp1" },
+          { name: "KR", nameLocalizations: { fr: "KR" }, value: "kr" }
         )
     ),
 
   cooldown: 4000,
+
+  examples: ["/riot invocateur:iamfabriceg region:euw1"],
 
   async execute(interaction) {
     await interaction.deferReply();

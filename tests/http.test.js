@@ -41,6 +41,17 @@ test("request réessaie sur une erreur 500 puis réussit", async () => {
   assert.equal(calls, 2);
 });
 
+test("request envoie un User-Agent descriptif", async () => {
+  let headers;
+  const fetchImpl = async (_url, init) => {
+    headers = init.headers;
+    return response(200, "{}");
+  };
+
+  await request("https://exemple.fr/ua", { fetchImpl, retries: 0 });
+  assert.match(headers["User-Agent"], /iamfabriceg-bot-discord\//);
+});
+
 test("request ne réessaie pas sur une erreur 404", async () => {
   let calls = 0;
   const fetchImpl = async () => {

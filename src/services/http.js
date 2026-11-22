@@ -4,6 +4,8 @@ const { createLogger } = require("./logger");
 
 const log = createLogger("http");
 
+const DEFAULT_USER_AGENT = "iamfabriceg-bot-discord/1.0 (+https://github.com/fabricegeib/iamfabriceg-bot-discord)";
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
@@ -13,7 +15,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function request(url, options = {}) {
   const {
     method = "GET",
-    headers = {},
+    headers: providedHeaders = {},
     body,
     timeoutMs = 8000,
     retries = 2,
@@ -23,6 +25,7 @@ async function request(url, options = {}) {
     retryStatuses = [408, 425, 429, 500, 502, 503, 504],
   } = options;
 
+  const headers = { "User-Agent": DEFAULT_USER_AGENT, ...providedHeaders };
   const cacheKey = `${method.toUpperCase()}:${url}:${JSON.stringify(headers)}`;
   if (method.toUpperCase() === "GET" && cacheTtlMs > 0) {
     const hit = cache.get(cacheKey);

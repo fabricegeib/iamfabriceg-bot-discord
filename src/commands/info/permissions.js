@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } = require("discord.js");
+const { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder, MessageFlags } = require("discord.js");
 const { getEnv } = require("../../config/env");
 
 const NEEDED = [
@@ -16,8 +16,10 @@ const NEEDED = [
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("permissions")
-    .setDescription("Affiche les permissions du bot et le lien d'invitation")
-    .setDescriptionLocalizations({ fr: "Affiche les permissions du bot et le lien d'invitation" }),
+    .setDescription("Show bot permissions and invite link")
+    .setDescriptionLocalizations({ fr: "Affiche les permissions du bot et son lien d'invitation. Ex. : /permissions" }),
+
+  examples: ["/permissions"],
 
   async execute(interaction) {
     const bits = NEEDED.map((name) => PermissionFlagsBits[name]).filter(Boolean);
@@ -40,6 +42,6 @@ module.exports = {
       .addFields({ name: "Lien d'invitation (permissions minimales)", value: `[Ajouter le bot](${invite})` })
       .setTimestamp();
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
   },
 };

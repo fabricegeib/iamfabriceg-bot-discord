@@ -7,8 +7,10 @@ const { games } = require("../../config/games");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("status")
-    .setDescription("Affiche l'état du bot et des intégrations")
-    .setDescriptionLocalizations({ fr: "Affiche l'état du bot et des intégrations" }),
+    .setDescription("Show bot and integrations status")
+    .setDescriptionLocalizations({ fr: "Affiche l'état du bot et des intégrations. Ex. : /status" }),
+
+  examples: ["/status"],
 
   async execute(interaction) {
     const started = Math.floor((Date.now() - interaction.client.readyAt.getTime()) / 1000);

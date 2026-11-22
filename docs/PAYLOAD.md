@@ -7,7 +7,10 @@ Le bot parle au CMS via la **REST API générée automatiquement** par Payload v
 Dans `.env` :
 
 ```env
-PAYLOAD_URL=https://votre-site.com
+# URL interne service-à-service (bot -> CMS)
+PAYLOAD_URL=http://cms:3001
+# Origine navigateur autorisée dans csrf/cors (admin Payload)
+PAYLOAD_PUBLIC_URL=http://localhost:3001
 PAYLOAD_AUTH_SLUG=users
 PAYLOAD_GAMES_SLUG=games
 PAYLOAD_API_KEY=...
@@ -46,35 +49,27 @@ Paramètres utiles : `depth`, `limit`, `page`, `sort`, `select`, `where[status][
 
 ## 3. Custom endpoint `/api/bot/...`
 
-Côté CMS, exposez uniquement les données nécessaires. Exemple de route Next.js (App Router) :
+Côté CMS, exposez uniquement les données nécessaires. L'implémentation réelle est un **custom endpoint
+Payload** dans `cms/src/endpoints/bot-summary.ts` (pas une route `src/app/api/...`) :
 
 ```ts
-// src/app/api/bot/summary/route.ts
-import configPromise from '@payload-config'
-import { getPayload } from 'payload'
-
-export async function GET() {
-  const payload = await getPayload({ config: await configPromise })
-
-  const games = await payload.find({
-    collection: 'games',
-    limit: 100,
-    select: { title: true, slug: true, discordRoleId: true },
-  })
-
-  const news = await payload.find({
-    collection: 'posts',
-    limit: 5,
-    sort: '-createdAt',
-    where: { status: { equals: 'published' } },
-  })
-
-  return Response.json({
-    games: games.docs,
-    news: news.docs.map(({ title, slug, excerpt }) => ({ title, slug, excerpt })),
-  })
-}
+// cms/src/endpoints/bot-summary.ts (extrait)
+export const botEndpoints: Endpoint[] = [
+  {
+    path: '/bot/summary',
+    method: 'GET',
+    handler: async (req) => {
+      const payload = await getPayload({ config: await import('@payload-config').then((m) => m.default) })
+      const games = await payload.find({ collection: 'games', limit: 100, where: { published: { equals: true } } })
+      const commands = await payload.find({ collection: 'commands', limit: 100, where: { active: { equals: true } } })
+      const news = await payload.find({ collection: 'news', limit: 5, sort: '-createdAt' })
+      return Response.json({ games: games.docs, commands: commands.docs, news: news.docs })
+    },
+  },
+]
 ```
+
+Le front public (`cms/src/app/(frontend)/page.tsx`) utilise la Local API et lit les mêmes collections.
 
 Appel depuis le bot :
 
@@ -99,33 +94,23 @@ await client.upsertDiscordProfile(interaction.user.id, { username: "Fabrice" });
 
 ### Côté CMS (hook `afterChange`)
 
-```ts
-// src/collections/Posts.ts
-import type { CollectionConfig } from 'payload'
+Les hooks sont centralisés dans `cms/src/hooks/notify-bot.ts` et branchés sur les collections réelles
+`games`, `commands`, `news` et `events` :
 
-export const Posts: CollectionConfig = {
-  slug: 'posts',
-  hooks: {
-    afterChange: [
-      async ({ doc, operation, req }) => {
-        if (operation !== 'create' || doc.status !== 'published') return
-        await fetch(`${process.env.BOT_WEBHOOK_URL}/webhooks/payload`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-payload-signature': crypto
-              .createHmac('sha256', process.env.WEBHOOK_SECRET!)
-              .update(JSON.stringify({ event: 'post.published', doc }))
-              .digest('hex'),
-          },
-          body: JSON.stringify({ event: 'post.published', doc: { title: doc.title, slug: doc.slug } }),
-        })
-      },
-    ],
-  },
-  fields: [{ name: 'title', type: 'text', required: true }, { name: 'slug', type: 'text' }],
+```ts
+// cms/src/hooks/notify-bot.ts (extrait)
+const body = JSON.stringify({ event: `${collection}.${operation}`, collection, operation, id: doc.id, doc })
+const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+if (process.env.WEBHOOK_SECRET) {
+  headers['x-payload-signature'] = createHmac('sha256', process.env.WEBHOOK_SECRET)
+    .update(body)
+    .digest('hex')
 }
+await fetch(`${process.env.BOT_WEBHOOK_URL}/webhooks/payload`, { method: 'POST', headers, body })
 ```
+
+Si `WEBHOOK_SECRET` est vide, aucun `x-payload-signature` n'est envoyé : renseigner la même valeur
+dans le bot et le CMS (voir [`docs/CMS.md#5-webhooks`](./CMS.md#5-webhooks)).
 
 ### Côté bot
 

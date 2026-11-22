@@ -1,6 +1,12 @@
+const { FeatureDisabledError } = require("../services/errors");
 const { createLogger } = require("../services/logger");
 const { shared: cooldowns } = require("./cooldown");
-const { friendlyMessage, respondError } = require("./error");
+const {
+  friendlyMessage,
+  respondError,
+  isExpiredInteraction,
+  isAlreadyAcknowledged,
+} = require("./error");
 
 const log = createLogger("command");
 
@@ -23,7 +29,15 @@ module.exports = async (interaction) => {
     await command.execute(interaction);
     log.info(`${interaction.user.tag} a utilisé /${interaction.commandName}`);
   } catch (error) {
-    log.error(`Erreur sur /${interaction.commandName}`, error);
-    await respondError(interaction, friendlyMessage(error));
+    // Une commande qui échoue ne doit pas consommer son cooldown : l'utilisateur peut réessayer.
+    cooldowns.reset(interaction.user.id, interaction.commandName);
+    if (isExpiredInteraction(error) || isAlreadyAcknowledged(error)) {
+      log.debug(`Interaction expirée sur /${interaction.commandName}`);
+    } else if (error instanceof FeatureDisabledError) {
+      log.warn(`Commande désactivée /${interaction.commandName} : ${error.message}`);
+    } else {
+      log.error(`Erreur sur /${interaction.commandName}`, error);
+    }
+    await respondError(interaction, friendlyMessage(error), { cause: error });
   }
 };

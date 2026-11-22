@@ -35,6 +35,7 @@ services:
       PORT: "3000"
       DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
       PAYLOAD_URL: http://cms:3001
+      PAYLOAD_PUBLIC_URL: ${PAYLOAD_PUBLIC_URL:-http://localhost:3001}
       BOT_WEBHOOK_URL: http://bot:3000
     ports:
       - "3012:3000"
@@ -62,6 +63,7 @@ services:
       CMS_PORT: "3001"
       DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
       PAYLOAD_URL: http://cms:3001
+      PAYLOAD_PUBLIC_URL: ${PAYLOAD_PUBLIC_URL:-http://localhost:3001}
       BOT_WEBHOOK_URL: http://bot:3000
     command: ["pnpm", "--filter", "cms", "seed"]
     restart: "no"
@@ -83,6 +85,7 @@ services:
       CMS_PORT: "3001"
       DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
       PAYLOAD_URL: http://cms:3001
+      PAYLOAD_PUBLIC_URL: ${PAYLOAD_PUBLIC_URL:-http://localhost:3001}
       BOT_WEBHOOK_URL: http://bot:3000
     ports:
       - "3001:3001"

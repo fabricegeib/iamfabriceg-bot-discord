@@ -11,8 +11,8 @@ const { pokemonEmbed } = require("../../handlers/selectMenuHandler");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("pokemon")
-    .setDescription("Informations sur un Pokémon")
-    .setDescriptionLocalizations({ fr: "Informations sur un Pokémon" })
+    .setDescription("Show a Pokémon fact sheet")
+    .setDescriptionLocalizations({ fr: "Affiche la fiche d'un Pokémon. Ex. : /pokemon nom:pikachu" })
     .addStringOption((option) =>
       option
         .setName("nom")
@@ -21,6 +21,8 @@ module.exports = {
     ),
 
   cooldown: 2000,
+
+  examples: ["/pokemon nom:pikachu","/pokemon nom:25"],
 
   async execute(interaction) {
     await interaction.deferReply();

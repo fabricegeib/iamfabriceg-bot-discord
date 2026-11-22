@@ -4,13 +4,15 @@ const { steam } = require("../../services/providers");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("steam")
-    .setDescription("Profil et jeux Steam")
-    .setDescriptionLocalizations({ fr: "Profil et jeux Steam" })
+    .setDescription("Show a Steam profile and owned games")
+    .setDescriptionLocalizations({ fr: "Affiche un profil Steam et ses jeux. Ex. : /steam identifiant:76561198000000000" })
     .addStringOption((option) =>
-      option.setName("identifiant").setDescription("SteamID ou URL personnalisée").setRequired(true)
+      option.setName("identifiant").setDescription("SteamID or custom URL (e.g. 76561198000000000)").setDescriptionLocalizations({ fr: "SteamID ou URL personnalisée (ex. : 76561198000000000)" }).setRequired(true)
     ),
 
   cooldown: 4000,
+
+  examples: ["/steam identifiant:76561198000000000"],
 
   async execute(interaction) {
     await interaction.deferReply();

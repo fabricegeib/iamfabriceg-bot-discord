@@ -4,20 +4,23 @@ const { keyless } = require("../../services/providers");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("deals")
-    .setDescription("Bons plans et giveaways de jeux vidéo")
-    .setDescriptionLocalizations({ fr: "Bons plans et giveaways de jeux vidéo" })
+    .setDescription("Show game deals, free games and giveaways")
+    .setDescriptionLocalizations({ fr: "Affiche bons plans, jeux gratuits et giveaways. Ex. : /deals source:free" })
     .addStringOption((option) =>
       option
         .setName("source")
-        .setDescription("Type d'offre")
+        .setDescription("Offer type (e.g. free)")
+        .setDescriptionLocalizations({ fr: "Type d'offre (ex. : free)" })
         .addChoices(
-          { name: "Bons plans Steam", value: "deals" },
-          { name: "Jeux gratuits", value: "free" },
-          { name: "Giveaways", value: "giveaways" }
+          { name: "Bons plans Steam", nameLocalizations: { fr: "Bons plans Steam" }, value: "deals" },
+          { name: "Jeux gratuits", nameLocalizations: { fr: "Jeux gratuits" }, value: "free" },
+          { name: "Giveaways", nameLocalizations: { fr: "Giveaways" }, value: "giveaways" }
         )
     ),
 
   cooldown: 5000,
+
+  examples: ["/deals source:free","/deals source:steam"],
 
   async execute(interaction) {
     await interaction.deferReply();

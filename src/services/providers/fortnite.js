@@ -1,5 +1,5 @@
 const { request, buildUrl } = require("../http");
-const { FeatureDisabledError, NotFoundError } = require("../errors");
+const { FeatureDisabledError, HttpError, NotFoundError } = require("../errors");
 const { getEnv } = require("../../config/env");
 
 const BASE = "https://fortnite-api.com/v2";
@@ -48,15 +48,39 @@ async function getNews(mode = "br") {
   };
 }
 
-/** Statistiques Battle Royale — nécessite FORTNITE_API_KEY. */
+/**
+ * Statistiques Battle Royale — nécessite FORTNITE_API_KEY.
+ * `timeWindow` : "season" (par défaut) ou "lifetime".
+ * Si le joueur n'a pas encore joué cette saison, on replie automatiquement sur
+ * ses statistiques lifetime pour éviter un 404 opaque.
+ */
 async function getStats(name, accountType = "epic", timeWindow = "season") {
   const apiKey = getEnv().FORTNITE_API_KEY;
   if (!apiKey) throw new FeatureDisabledError("Les statistiques Fortnite", "FORTNITE_API_KEY");
 
-  const data = await request(
-    buildUrl(`${BASE}/stats/br/v2`, { name, accountType, timeWindow }),
-    { headers: { Authorization: apiKey }, cacheTtlMs: 15 * 60 * 1000 }
-  );
+  const window = ["season", "lifetime"].includes(timeWindow) ? timeWindow : "season";
+
+  async function fetchStats(requestedWindow) {
+    return request(buildUrl(`${BASE}/stats/br/v2`, { name, accountType, timeWindow: requestedWindow }), {
+      headers: { Authorization: apiKey },
+      cacheTtlMs: 15 * 60 * 1000,
+    });
+  }
+
+  let data;
+  let usedWindow = window;
+  try {
+    data = await fetchStats(window);
+  } catch (error) {
+    const noSeasonMatch =
+      window === "season" &&
+      error instanceof HttpError &&
+      error.status === 404 &&
+      /didnt play any match yet/i.test(typeof error.body === "string" ? error.body : "");
+    if (!noSeasonMatch) throw error;
+    usedWindow = "lifetime";
+    data = await fetchStats("lifetime");
+  }
 
   if (data?.status !== 200) throw new NotFoundError(`Aucune statistique pour « ${name} ».`);
 
@@ -66,6 +90,8 @@ async function getStats(name, accountType = "epic", timeWindow = "season") {
     name: data.data?.name || name,
     level: data.data?.level,
     image: data.data?.image,
+    window: usedWindow,
+    fallback: usedWindow !== window,
     wins: firstMode?.wins?.value ?? 0,
     kills: firstMode?.kills?.value ?? 0,
     matches: firstMode?.matchesPlayed?.value ?? 0,

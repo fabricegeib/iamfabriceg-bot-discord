@@ -1,7 +1,7 @@
 # PLAN DE MODERNISATION — iamfabriceg Bot (Discord)
 
-> Date : 2026-11-21  
-> État : **plan validé, prêt à exécuter**  
+> Date : 2026-11-21 (mis à jour 22/11/2026)
+> État : **plan validé, en cours de finalisation**
 > Base : `master` synchronisée avec `origin/master` (`4a685c2`), arbre de travail propre.  
 > Stack conservée : **CommonJS + discord.js 14** (pas de migration TypeScript/ESM).
 >
@@ -311,3 +311,34 @@ docker compose -f docker-compose.dev.yml --profile tools run --rm cms-seed
 2. Créer les rôles Discord Aniimo et GOALS puis renseigner `ROLE_ANIIMO_ID` / `ROLE_GOALS_ID`.
 3. Confirmer l'ID du salon `#bot-test` (`652684137957818378` par défaut).
 4. Après validation : `pnpm deploy` et `pnpm send:roles` dans `#bot-test`.
+
+---
+
+## 12. Administration Payload — stabilisation (22/11/2026)
+
+Branche : `build/docker-pnpm-payload-admin`. Documentation restructurée sous « Administration Payload »
+(`README.md`, `docs/CMS.md` en 6 chapitres, `docs/NOMENCLATURE.md`, `PLAN.md`).
+
+| Ticket | Action | État |
+|---|---|---|
+| `CMS-BUG-1` | `PAYLOAD_PUBLIC_URL` + `csrf`/`cors` : fin des 401/403 sur les POST de l'admin (spinner « Add Social Link ») | ✅ |
+| `CMS-BUG-2` | Renseigner `PAYLOAD_SECRET` / `WEBHOOK_SECRET` (64 hex) dans `.env` | ✅ |
+| `CMS-BUG-3` | Dev CMS en `next dev --webpack` (Turbopack casse `resolve-url-loader`) | ✅ |
+| `CMS-DOC-1` | Restructuration `docs/CMS.md` en 6 sous-sections | ✅ |
+| `CMS-TEST-1` | `scripts/cms-smoke.sh` : login + ajout/suppression d'un `socialLinks` de test | ✅ |
+| `CMS-FEAT-1` | Afficher `socialLinks` sur le front public et dans `/api/bot/summary` | ⏳ |
+| `BOT-BUG-1` | Boutons de rôles : accorder `Gérer les rôles` au rôle `Bots` dans Discord (action utilisateur) | ⏳ |
+| `BOT-BUG-2` | Erreurs 10062/40060, `ephemeral` déprécié, cooldown remboursé, messages d'erreur | ✅ |
+| `BOT-BUG-3` | Fortnite : repli `season` → `lifetime`, option `periode`, User-Agent HTTP pour `/deals` | ✅ |
+| `BOT-FEAT-1` | Commande `/help` (exemples et options lus depuis les métadonnées), 18 commandes déployées | ✅ |
+
+### Validation du 22/11/2026
+
+- `pnpm lint` : 0 erreur ; `pnpm test` : **29/29**
+- `pnpm --filter cms lint` : 0 erreur (8 avertissements `no-explicit-any`)
+- `pnpm --filter cms build` : succès (Turbopack production)
+- `docker compose config` (dev + prod) : valides
+- Login admin + `POST /api/globals/botSettings` avec cookie et `Origin: http://localhost:3001` : **200**
+- `socialLinks` ajouté puis restauré à `[]` : **200** ; plus aucun 401/403 dans les logs CMS
+- Fortnite réel : `window: "lifetime"`, `fallback: true` ; `/deals` : 8 offres
+- Discord live : 18 commandes déployées ; permissions `MANAGE_ROLES=false` confirmées (action utilisateur requise)

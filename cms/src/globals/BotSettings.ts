@@ -37,6 +37,7 @@ export const BotSettings: GlobalConfig = {
       name: 'socialLinks',
       type: 'array',
       label: 'Liens sociaux',
+      defaultValue: [],
       fields: [
         { name: 'label', type: 'text', required: true },
         { name: 'url', type: 'text', required: true },

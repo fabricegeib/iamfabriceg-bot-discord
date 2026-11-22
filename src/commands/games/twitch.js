@@ -4,11 +4,13 @@ const { twitch } = require("../../services/providers");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("twitch")
-    .setDescription("Statut d'une chaîne Twitch")
-    .setDescriptionLocalizations({ fr: "Statut d'une chaîne Twitch" })
-    .addStringOption((option) => option.setName("chaine").setDescription("Nom de la chaîne").setRequired(true)),
+    .setDescription("Check a Twitch channel status")
+    .setDescriptionLocalizations({ fr: "Affiche le statut d'une chaîne Twitch. Ex. : /twitch chaine:iamfabriceg" })
+    .addStringOption((option) => option.setName("chaine").setDescription("Channel name (e.g. iamfabriceg)").setDescriptionLocalizations({ fr: "Nom de la chaîne (ex. : iamfabriceg)" }).setRequired(true)),
 
   cooldown: 4000,
+
+  examples: ["/twitch chaine:iamfabriceg"],
 
   async execute(interaction) {
     await interaction.deferReply();

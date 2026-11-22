@@ -6,24 +6,24 @@ const { getEnv } = require("../../config/env");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("games")
-    .setDescription("Catalogue des jeux du serveur")
-    .setDescriptionLocalizations({ fr: "Catalogue des jeux du serveur" })
-    .addSubcommand((sub) => sub.setName("list").setDescription("Affiche tous les jeux").setDescriptionLocalizations({ fr: "Affiche tous les jeux" }))
+    .setDescription("Browse the server game catalog")
+    .setDescriptionLocalizations({ fr: "Catalogue des jeux du serveur. Ex. : /games info jeu:fortnite" })
+    .addSubcommand((sub) => sub.setName("list").setDescription("List all tracked games (e.g. /games list)").setDescriptionLocalizations({ fr: "Affiche tous les jeux (ex. : /games list)" }))
     .addSubcommand((sub) =>
       sub
         .setName("info")
-        .setDescription("Fiche détaillée d'un jeu")
-        .setDescriptionLocalizations({ fr: "Fiche détaillée d'un jeu" })
+        .setDescription("Show a game fact sheet (e.g. /games info jeu:fortnite)")
+        .setDescriptionLocalizations({ fr: "Fiche détaillée d'un jeu (ex. : /games info jeu:fortnite)" })
         .addStringOption((option) =>
           option
             .setName("jeu")
-            .setDescription("Nom du jeu")
-            .setDescriptionLocalizations({ fr: "Nom du jeu" })
+            .setDescription("Game name (e.g. Fortnite)")
+            .setDescriptionLocalizations({ fr: "Nom du jeu (ex. : Fortnite)" })
             .setRequired(true)
             .setAutocomplete(true)
         )
     )
-    .addSubcommand((sub) => sub.setName("roles").setDescription("Liste des rôles de jeu").setDescriptionLocalizations({ fr: "Liste des rôles de jeu" })),
+    .addSubcommand((sub) => sub.setName("roles").setDescription("List game roles (e.g. /games roles)").setDescriptionLocalizations({ fr: "Liste des rôles de jeu (ex. : /games roles)" })),
 
   cooldown: 2000,
 
@@ -35,6 +35,8 @@ module.exports = {
       .map((game) => ({ name: `${game.emoji} ${game.name}`, value: game.key }));
     await interaction.respond(matches);
   },
+
+  examples: ["/games list","/games info jeu:fortnite","/games roles"],
 
   async execute(interaction) {
     const subcommand = interaction.options.getSubcommand();

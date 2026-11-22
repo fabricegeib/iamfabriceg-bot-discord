@@ -1,7 +1,12 @@
 const { createLogger } = require("../services/logger");
 const { pokeapi, rawg } = require("../services/providers");
 const { byKey } = require("../config/games");
-const { friendlyMessage, respondError } = require("./error");
+const {
+  friendlyMessage,
+  respondError,
+  isExpiredInteraction,
+  isAlreadyAcknowledged,
+} = require("./error");
 
 const log = createLogger("select");
 
@@ -30,7 +35,7 @@ module.exports = async (interaction) => {
     const [action, value] = interaction.customId.split(":");
 
     if (action === "pokemon" || interaction.customId === "starter") {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferUpdate();
       const query = (interaction.values?.[0] || value || "").replace(/^pokemon:/, "");
       const pokemon = await pokeapi.getPokemon(query);
       const { EmbedBuilder } = require("discord.js");
@@ -40,7 +45,7 @@ module.exports = async (interaction) => {
     }
 
     if (action === "game") {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferUpdate();
       const game = byKey.get(interaction.values?.[0] || value);
       if (!game) throw new Error("Jeu introuvable.");
       const detail = await rawg.getForCatalogGame(game);
@@ -63,8 +68,12 @@ module.exports = async (interaction) => {
 
     log.debug(`Menu non géré : ${interaction.customId}`);
   } catch (error) {
+    if (isExpiredInteraction(error) || isAlreadyAcknowledged(error)) {
+      log.debug(`Menu expiré : ${interaction.customId}`);
+      return;
+    }
     log.error("Erreur sur un menu de sélection", error);
-    await respondError(interaction, friendlyMessage(error));
+    await respondError(interaction, friendlyMessage(error), { cause: error });
   }
 };
 

@@ -1,20 +1,22 @@
-const { EmbedBuilder, SlashCommandBuilder } = require("discord.js");
+const { EmbedBuilder, SlashCommandBuilder, MessageFlags } = require("discord.js");
 const { requirePayloadClient } = require("../../services/payload");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("profil")
-    .setDescription("Lie ou met à jour votre profil dans le CMS")
-    .setDescriptionLocalizations({ fr: "Lie ou met à jour votre profil dans le CMS" })
+    .setDescription("Link or update your CMS profile")
+    .setDescriptionLocalizations({ fr: "Lie ou met à jour votre profil CMS. Ex. : /profil pseudo:Fabrice" })
     .addStringOption((option) =>
-      option.setName("pseudo").setDescription("Votre pseudo sur le site").setDescriptionLocalizations({ fr: "Votre pseudo sur le site" })
+      option.setName("pseudo").setDescription("Your site username (e.g. Fabrice)").setDescriptionLocalizations({ fr: "Votre pseudo sur le site (ex. : Fabrice)" })
     ),
 
   cooldown: 10_000,
 
+  examples: ["/profil pseudo:Fabrice"],
+
   async execute(interaction) {
     const client = requirePayloadClient();
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const result = await client.upsertDiscordProfile(interaction.user.id, {
       username: interaction.options.getString("pseudo") || interaction.user.username,

@@ -22,6 +22,15 @@ import { BotSettings } from './globals/BotSettings'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+/**
+ * `PAYLOAD_URL` est l'URL interne service-à-service (le bot appelle `http://cms:3001`).
+ * Le navigateur utilise une autre origine (`http://localhost:3001` en local, le
+ * domaine public en prod). Payload ajoute automatiquement `serverURL` à `csrf`,
+ * mais ignore le cookie de session si l'origine de la requête n'y figure pas :
+ * tous les POST de l'admin échouent alors en 401/403 (spinner infini).
+ */
+const publicURL = process.env.PAYLOAD_PUBLIC_URL || 'http://localhost:3001'
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -49,6 +58,8 @@ export default buildConfig({
   }),
   secret: process.env.PAYLOAD_SECRET || 'dev-secret-change-me',
   serverURL: process.env.PAYLOAD_URL || 'http://localhost:3001',
+  csrf: [publicURL, 'http://localhost:3001', 'http://127.0.0.1:3001'],
+  cors: [publicURL],
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },

@@ -1,10 +1,10 @@
-const { PermissionFlagsBits, SlashCommandBuilder } = require("discord.js");
+const { PermissionFlagsBits, SlashCommandBuilder, MessageFlags } = require("discord.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("prune")
-    .setDescription("Supprime plusieurs messages du salon")
-    .setDescriptionLocalizations({ fr: "Supprime plusieurs messages du salon" })
+    .setDescription("Delete several messages in this channel")
+    .setDescriptionLocalizations({ fr: "Supprime des messages du salon. Ex. : /prune nombre:10" })
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .addIntegerOption((option) =>
       option
@@ -16,8 +16,10 @@ module.exports = {
         .setRequired(true)
     ),
 
+  examples: ["/prune nombre:10"],
+
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const amount = interaction.options.getInteger("nombre");
     const result = await interaction.channel.bulkDelete(amount, true);
     await interaction.editReply(`🧹 ${result.size} message(s) supprimé(s).`);

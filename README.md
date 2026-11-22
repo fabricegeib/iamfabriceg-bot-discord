@@ -101,34 +101,41 @@ corepack pnpm docker:prod
 Les images `iamfabriceg/bot-discord:latest` et `iamfabriceg/bot-cms:latest` sont construites depuis `Dockerfile` et
 `cms/Dockerfile`. Le bot attend que le CMS et MongoDB soient `healthy`. Arrêt : `corepack pnpm docker:prod:down`.
 
-## CMS Payload v3
+## Administration Payload
 
-Le CMS est un projet Next.js 16 / React 19 dans [`cms/`](./cms). Il utilise le même workspace pnpm.
+Le CMS est un projet Next.js 16 / React 19 dans [`cms/`](./cms), dans le même workspace pnpm.
 
-- **Admin** : http://localhost:3001/admin — collection `users`, rôles `admin`/`editor`/`bot`.
-- **Front public** : http://localhost:3001/ — jeux publiés, commandes actives, actualités et dernier statut.
-  Aucun formulaire d'écriture n'y est exposé.
-- **Endpoint bot** : `GET /api/bot/summary`, `GET /api/bot/healthz`, `POST /api/bot/profile`.
-- **Webhooks** : les hooks `afterChange` publient vers `BOT_WEBHOOK_URL/webhooks/payload` avec une signature
-  HMAC-SHA256 (`x-payload-signature`) calculée avec `WEBHOOK_SECRET`.
+| Sous-section | Contenu | Référence |
+|---|---|---|
+| **Admin CMS** | Connexion, rôles, URL, endpoints du bot, secrets | [`docs/CMS.md#1-admin-cms`](./docs/CMS.md#1-admin-cms) |
+| **Front public** | Page `/`, Local API, données affichées, aucun appel HTTP | [`docs/CMS.md#2-front-public`](./docs/CMS.md#2-front-public) |
+| **Globals `botSettings`** | `features`, maintenance, `socialLinks` | [`docs/CMS.md#3-globals-botsettings`](./docs/CMS.md#3-globals-botsettings) |
+| **Collections** | Les 11 slugs et leurs champs clés | [`docs/CMS.md#4-collections`](./docs/CMS.md#4-collections) |
+| **Webhooks** | `afterChange`, HMAC-SHA256, réception par le bot | [`docs/CMS.md#5-webhooks`](./docs/CMS.md#5-webhooks) |
+| **Dépannage** | Spinner admin, 401/403 CSRF, secrets, Turbopack | [`docs/CMS.md#6-dépannage`](./docs/CMS.md#6-dépannage) |
 
-Collections : `users`, `games`, `commands`, `commandUsages`, `discordRoles`, `events`, `news`,
-`streamAlerts`, `webhookEvents`, `profiles`, `media` — plus le global `botSettings`.
-Détails : [`docs/CMS.md`](./docs/CMS.md).
+Accès rapide : admin `http://localhost:3001/admin`, front `http://localhost:3001/`,
+santé `GET /api/bot/healthz`, résumé `GET /api/bot/summary`. Les hooks `afterChange` publient vers
+`BOT_WEBHOOK_URL/webhooks/payload` avec une signature HMAC-SHA256 (`x-payload-signature`).
 
 Variables principales :
 
 ```env
 DATABASE_URI=mongodb://127.0.0.1:27020/iamfabriceg_bot
 PAYLOAD_SECRET=<openssl rand -hex 32>
+# URL interne service-à-service (bot -> CMS)
 PAYLOAD_URL=http://127.0.0.1:3001
+# Origine navigateur, autorisée dans csrf/cors du CMS (obligatoire pour les POST admin)
+PAYLOAD_PUBLIC_URL=http://localhost:3001
 PAYLOAD_API_KEY=<générée par pnpm cms:seed>
 BOT_WEBHOOK_URL=http://127.0.0.1:3012
 WEBHOOK_SECRET=<même valeur dans le bot et le CMS>
 ```
 
 En Docker, `DATABASE_URI`, `PAYLOAD_URL` et `BOT_WEBHOOK_URL` sont surchargés automatiquement par les
-compose files (`mongo:27017`, `cms:3001`, `bot:3000`).
+compose files (`mongo:27017`, `cms:3001`, `bot:3000`) ; `PAYLOAD_PUBLIC_URL` reste l'URL du navigateur
+(`http://localhost:3001` en dev, domaine public en prod). `serverURL` demeure l'URL interne : c'est
+`csrf`/`cors` qui autorise l'origine du navigateur.
 
 ## Commandes du bot
 
@@ -144,7 +151,7 @@ compose files (`mongo:27017`, `cms:3001`, `bot:3000`).
 | `/pokemon [nom]` | Pokédex dynamique (aléatoire si omis) | — |
 | `/fortnite shop` | Boutique actuelle en français | — |
 | `/fortnite news <mode>` | Actualités BR / STW / Creative | — |
-| `/fortnite stats <joueur>` | Statistiques Battle Royale | `FORTNITE_API_KEY` |
+| `/fortnite stats <joueur> [periode] [compte]` | Stats saison ou total (repli auto) | `FORTNITE_API_KEY` |
 | `/riot <invocateur> [region]` | Profil et classement LoL | `RIOT_API_KEY` |
 | `/steam <identifiant>` | Profil Steam et jeux les plus joués | `STEAM_API_KEY` |
 | `/deals [source]` | Offres Steam, jeux gratuits, giveaways | — |
@@ -152,6 +159,7 @@ compose files (`mongo:27017`, `cms:3001`, `bot:3000`).
 | `/kick`, `/prune`, `/mute`, `/unmute` | Modération (permissions Discord) | — |
 | `/profil [pseudo]` | Lie le profil Discord au CMS | `PAYLOAD_URL` |
 | `/sync` | Synchronise les jeux depuis le CMS (admin) | `PAYLOAD_URL` |
+| `/help [commande]` | Liste des commandes, options et exemples | — |
 
 Les commandes sans clé répondent par un message explicite : le bot **dégrade gracieusement**.
 
@@ -211,7 +219,8 @@ corepack pnpm cms:build        # build Next.js
 corepack pnpm cms:seed         # admin + clé API bot
 # équivalent Docker : docker compose -f docker-compose.dev.yml --profile tools run --rm cms-seed
 corepack pnpm lint
-corepack pnpm test             # 20 tests node:test
+corepack pnpm test             # 29 tests node:test
+bash scripts/cms-smoke.sh      # login admin + écriture/restauration botSettings
 corepack pnpm docker:dev
 corepack pnpm docker:prod
 ```
@@ -230,7 +239,7 @@ GitHub Actions (`.github/workflows/ci.yml`) : Node 26 + pnpm 10.15.0, `pnpm inst
 ```
 src/            bot CommonJS (config, services, providers, handlers, events, commands, tasks, utils)
 cms/            Payload v3 / Next 16 (collections, globals, endpoints, hooks, front public)
-tests/          20 tests node:test
+tests/          29 tests node:test
 docker-compose.dev.yml / docker-compose.prod.yml
 Dockerfile / cms/Dockerfile
 ```

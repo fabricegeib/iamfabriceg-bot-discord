@@ -1,28 +1,30 @@
-const { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } = require("discord.js");
+const { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder, MessageFlags } = require("discord.js");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("kick")
-    .setDescription("Expulser un membre")
-    .setDescriptionLocalizations({ fr: "Expulser un membre" })
+    .setDescription("Kick a member from the server")
+    .setDescriptionLocalizations({ fr: "Expulse un membre du serveur. Ex. : /kick membre:@user raison:spam" })
     .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers)
-    .addUserOption((option) => option.setName("membre").setDescription("Membre à expulser").setRequired(true))
-    .addStringOption((option) => option.setName("raison").setDescription("Motif de l'expulsion")),
+    .addUserOption((option) => option.setName("membre").setDescription("Member to kick (e.g. @user)").setDescriptionLocalizations({ fr: "Membre à expulser (ex. : @user)" }).setRequired(true))
+    .addStringOption((option) => option.setName("raison").setDescription("Kick reason (e.g. spam)").setDescriptionLocalizations({ fr: "Motif de l'expulsion (ex. : spam)" })),
+
+  examples: ["/kick membre:@user raison:spam"],
 
   async execute(interaction) {
-    if (!interaction.inGuild()) return interaction.reply({ content: "Commande réservée au serveur.", ephemeral: true });
+    if (!interaction.inGuild()) return interaction.reply({ content: "Commande réservée au serveur.", flags: MessageFlags.Ephemeral });
 
     const user = interaction.options.getUser("membre");
     const reason = interaction.options.getString("raison") || `Expulsé par ${interaction.user.tag}`;
     const member = await interaction.guild.members.fetch(user.id).catch(() => null);
-    if (!member) return interaction.reply({ content: "Membre introuvable.", ephemeral: true });
+    if (!member) return interaction.reply({ content: "Membre introuvable.", flags: MessageFlags.Ephemeral });
     if (member.id === interaction.client.user.id || member.id === interaction.user.id) {
-      return interaction.reply({ content: "Vous ne pouvez pas expulser ce membre.", ephemeral: true });
+      return interaction.reply({ content: "Vous ne pouvez pas expulser ce membre.", flags: MessageFlags.Ephemeral });
     }
 
     const bot = interaction.guild.members.me;
     if (member.roles.highest.position >= bot.roles.highest.position) {
-      return interaction.reply({ content: "Ce membre a un rôle supérieur ou égal au mien.", ephemeral: true });
+      return interaction.reply({ content: "Ce membre a un rôle supérieur ou égal au mien.", flags: MessageFlags.Ephemeral });
     }
 
     await member.kick(reason);

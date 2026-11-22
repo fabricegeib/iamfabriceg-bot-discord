@@ -32,6 +32,7 @@ services:
       PORT: "3000"
       DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
       PAYLOAD_URL: http://cms:3001
+      PAYLOAD_PUBLIC_URL: http://localhost:3001
       BOT_WEBHOOK_URL: http://bot:3000
     working_dir: /app
     volumes:
@@ -67,6 +68,7 @@ services:
       CMS_PORT: "3001"
       DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
       PAYLOAD_URL: http://cms:3001
+      PAYLOAD_PUBLIC_URL: http://localhost:3001
       BOT_WEBHOOK_URL: http://bot:3000
     working_dir: /app
     volumes:
@@ -93,6 +95,7 @@ services:
       CMS_PORT: "3001"
       DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
       PAYLOAD_URL: http://cms:3001
+      PAYLOAD_PUBLIC_URL: http://localhost:3001
       BOT_WEBHOOK_URL: http://bot:3000
     working_dir: /app
     volumes:

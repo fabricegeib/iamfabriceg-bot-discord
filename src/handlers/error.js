@@ -1,4 +1,24 @@
+const { MessageFlags } = require("discord.js");
 const { FeatureDisabledError, NotFoundError, HttpError } = require("../services/errors");
+const { createLogger } = require("../services/logger");
+
+const log = createLogger("error");
+
+const ERROR_SENT = Symbol.for("iamfabriceg.errorResponseSent");
+
+/** Interaction expirée (> 3 s pour un ack initial, > 15 min pour un follow-up). */
+function isExpiredInteraction(error) {
+  return error?.code === 10062 || /unknown interaction/i.test(error?.message ?? "");
+}
+
+/** Réponse déjà acquittée : tenter un second callback initial déclenche 40060. */
+function isAlreadyAcknowledged(error) {
+  return (
+    error?.code === 40060 ||
+    error?.code === "InteractionAlreadyReplied" ||
+    /already been acknowledged|already been sent or deferred/i.test(error?.message ?? "")
+  );
+}
 
 /** Traduit une erreur technique en message utilisateur lisible. */
 function friendlyMessage(error) {
@@ -12,18 +32,38 @@ function friendlyMessage(error) {
   return "❌ Une erreur est survenue. Réessayez plus tard.";
 }
 
-/** Répond sans jamais doubler une réponse déjà envoyée ou différée. */
-async function respondError(interaction, message) {
+/**
+ * Répond sans jamais doubler une réponse déjà envoyée ou différée.
+ * Une interaction expirée est silencieusement ignorée : il n'est plus possible
+ * d'y répondre, et un second callback initial provoquerait une erreur 40060.
+ */
+async function respondError(interaction, message, { cause } = {}) {
+  if (interaction[ERROR_SENT]) return false;
+  interaction[ERROR_SENT] = true;
+
+  if (!interaction.isRepliable?.()) return false;
+  if (isExpiredInteraction(cause) || isAlreadyAcknowledged(cause)) return false;
+
   try {
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({ content: message, ephemeral: true });
+    if (interaction.deferred || interaction.replied) {
+      await interaction.followUp({ content: message, flags: MessageFlags.Ephemeral });
     } else {
-      await interaction.reply({ content: message, ephemeral: true });
+      await interaction.reply({ content: message, flags: MessageFlags.Ephemeral });
     }
+    return true;
   } catch (error) {
-    // Dernier recours : le message d'erreur ne doit pas provoquer une seconde erreur.
-    console.error("Impossible d'envoyer le message d'erreur :", error);
+    if (isExpiredInteraction(error) || isAlreadyAcknowledged(error)) {
+      log.debug("Réponse d'erreur ignorée (interaction expirée ou déjà acquittée)", { code: error.code });
+    } else {
+      log.warn("Impossible d'envoyer le message d'erreur", error);
+    }
+    return false;
   }
 }
 
-module.exports = { friendlyMessage, respondError };
+module.exports = {
+  friendlyMessage,
+  respondError,
+  isExpiredInteraction,
+  isAlreadyAcknowledged,
+};
