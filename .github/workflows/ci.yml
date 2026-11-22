@@ -1,10 +1,9 @@
 name: CI
 
-on:
-  push:
-    branches: [master, main, "build/**", "feat/**", "refactor/**", "chore/**", "security/**"]
-  pull_request:
-    branches: [master, main, "build/**"]
+# Exécution manuelle uniquement : les contrôles sont déjà joués en local via Docker
+# (voir docs/DEPLOY-VPS.md §2.1) et aucun déploiement n'est effectué par GitHub.
+# Les runs automatiques ont été désactivés car ils échouaient sans secrets Discord.
+on: workflow_dispatch
 
 jobs:
   quality:
@@ -28,6 +27,13 @@ jobs:
         run: pnpm lint
 
       - name: Test bot
+        # getEnv() valide ces variables au démarrage ; valeurs factices suffisent,
+        # aucun appel réseau n'est effectué par ces tests.
+        env:
+          DISCORD_TOKEN: ci-token
+          CLIENT_ID: ci-client-id
+          GUILD_ID: ci-guild-id
+          FORTNITE_API_KEY: ci-fortnite-key
         run: pnpm test -- --test-reporter=spec
 
       - name: Lint CMS

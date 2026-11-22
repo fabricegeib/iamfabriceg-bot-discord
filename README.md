@@ -252,14 +252,17 @@ corepack pnpm docker:prod
 ## CI
 
 GitHub Actions (`.github/workflows/ci.yml`) : Node 26 + pnpm 10.15.0, `pnpm install --frozen-lockfile`,
-`pnpm lint`, `pnpm test` et `pnpm --filter cms build`.
+`pnpm lint`, `pnpm test` et `pnpm --filter cms build`. **Déclenchement manuel uniquement**
+(`workflow_dispatch`) : les contrôles sont joués en local via Docker (§2.1 du guide VPS), et
+GitHub ne déploie rien. Aucun secret n'est stocké dans le workflow ; les tests utilisent des
+valeurs factices pour les variables Discord exigées par `getEnv()`.
 
 ## Architecture
 
 ```
 src/            bot CommonJS (config, services, providers, handlers, events, commands, tasks, utils)
 cms/            Payload v3 / Next 16 (collections, globals, endpoints, hooks, front public)
-tests/          29 tests node:test
+tests/          37 tests node:test
 docker-compose.dev.yml / docker-compose.prod.yml
 Dockerfile / cms/Dockerfile
 ```
