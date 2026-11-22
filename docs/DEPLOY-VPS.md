@@ -451,7 +451,8 @@ docker pull registry.fabricegeib.com/iamfabriceg-bot-cms@sha256:b181c774b5e77b4c
 | Bot muet sur Discord | Token/ID absents du `.env` VPS | Comparer les clés présentes (sans afficher les valeurs) |
 | Stats vides | Import MongoDB manquant ou mauvaise DB | Rejouer §7 et vérifier `getCollectionNames()` |
 | Search 401/403 | `PAYLOAD_API_KEY` changé | Recopier la clé locale, `up -d --force-recreate bot cms` |
-| Commande externe « désactivé : variable … non configurée » | Clé API absente | Voir §3, puis recréer le conteneur `bot` |
+| Commande externe « désactivé : variable … non configurée » | Clé absente **ou** `.env` modifié sans recréation du conteneur (Docker lit `env_file` à la création et `getEnv()` met la config en cache au démarrage) | Vérifier la clé dans `.env`, puis `docker compose -f docker-compose.dev.yml up -d --force-recreate bot` (sur le VPS : avec les fichiers prod) |
+| `/twitch` dit « non configuré » alors que la clé est dans `.env` | Conteneur bot démarré avant l’ajout des clés | Recréer le bot ; vérifier avec `docker exec iamfabriceg-bot-discord node -e 'require("./src/services/providers/twitch").getAppToken().then(t=>console.log("OK",t.length))'` |
 | Palette ne s’ouvre qu’au 2ᵉ tap sur iPhone | Ancienne version de l’image | Vérifier le digest `b181c774…` de l’image CMS |
 | Cercles rouges / safe areas | iOS met les méta en cache | Retirer puis rajouter la web app de l’écran d’accueil |
 
