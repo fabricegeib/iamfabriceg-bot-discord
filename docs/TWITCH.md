@@ -3,7 +3,7 @@
 ## 1. Application Twitch
 
 1. Créez une application sur <https://dev.twitch.tv/console/apps> avec comme **OAuth Redirect URL**
-   `http://localhost` (ou `http://localhost:3000`). Le bot utilise uniquement `client_credentials` :
+   `http://localhost` (ou `http://localhost:31000`). Le bot utilise uniquement `client_credentials` :
    cette URL de redirect n'est jamais appelée, elle sert juste à enregistrer l'application.
 2. Renseignez `TWITCH_CLIENT_ID` et `TWITCH_CLIENT_SECRET` dans `.env`.
 3. Définissez `PUBLIC_URL` avec l'URL publique du bot (ex. `https://bot.iamfabriceg.xyz`), car EventSub
@@ -32,7 +32,7 @@ Vous pouvez aussi passer une autre chaîne en argument.
 
 ## 4. Callback `/webhooks/twitch`
 
-Le serveur HTTP du bot (`PORT`, défaut 3000) gère trois types de messages :
+Le serveur HTTP du bot (`PORT`, défaut 31000 ; port interne 3000 dans le conteneur) gère trois types de messages :
 
 | `Twitch-Eventsub-Message-Type` | Comportement |
 |---|---|
@@ -55,7 +55,7 @@ Exemple Nginx :
 
 ```nginx
 location /webhooks/ {
-    proxy_pass http://127.0.0.1:3012;
+    proxy_pass http://127.0.0.1:31000;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 }

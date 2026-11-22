@@ -5,9 +5,9 @@
   "description": "Payload CMS v3 pour iamfabriceg Bot (Discord)",
   "type": "module",
   "scripts": {
-    "dev": "next dev --webpack --port 3001",
+    "dev": "next dev --webpack --port 31001",
     "build": "NODE_ENV=production next build",
-    "start": "next start --port 3001",
+    "start": "next start --port 31001",
     "lint": "eslint .",
     "generate:types": "payload generate:types",
     "generate:importmap": "payload generate:importmap",

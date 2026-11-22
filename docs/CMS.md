@@ -15,11 +15,14 @@ corepack pnpm docker:dev
 
 | Service | URL |
 |---|---|
-| Admin Payload | http://localhost:3001/admin |
-| Front public | http://localhost:3001/ |
-| Endpoint santé CMS | http://localhost:3001/api/bot/healthz |
-| Endpoint résumé bot | http://localhost:3001/api/bot/summary |
-| MongoDB | mongodb://localhost:27020/iamfabriceg_bot |
+| Admin Payload | http://localhost:31001/admin |
+| Front public | http://localhost:31001/ |
+| Endpoint santé CMS | http://localhost:31001/api/bot/healthz |
+| Endpoint résumé bot | http://localhost:31001/api/bot/summary |
+| MongoDB | mongodb://localhost:31017/iamfabriceg_bot |
+
+Les ports hôtes `31000` / `31001` / `31017` sont la convention du projet : mêmes valeurs en local,
+en Docker et sur le VPS. Dans les conteneurs, les ports internes restent `3000` / `3001` / `27017`.
 
 Premier lancement (seed via Docker, sans pnpm local) :
 
@@ -38,7 +41,7 @@ Sans Docker :
 ```bash
 corepack pnpm install --frozen-lockfile
 corepack pnpm cms:seed      # crée l'admin, la clé API bot et des données de base
-corepack pnpm cms:dev       # http://localhost:3001 (Webpack)
+corepack pnpm cms:dev       # http://localhost:31001 (Webpack)
 ```
 
 MongoDB doit tourner localement (par exemple via `docker compose -f docker-compose.dev.yml up -d mongo`).
@@ -88,10 +91,10 @@ correspondre les deux, utilise le même pseudo dans `displayName` de ton compte 
 ### URLs et origines
 
 `serverURL` est l'URL **interne** service-à-service : `http://cms:3001` dans Docker. Le navigateur utilise
-`PAYLOAD_PUBLIC_URL` (`http://localhost:3001` en local, domaine public en prod). Payload ajoute
+`PAYLOAD_PUBLIC_URL` (`http://localhost:31001` en local, domaine public en prod). Payload ajoute
 automatiquement `serverURL` à `csrf`, mais **ignore le cookie** si l'origine `Origin:` de la requête n'y
 figure pas : tous les POST de l'admin tombent alors en 401/403. La configuration ajoute donc explicitement
-`csrf: [publicURL, http://localhost:3001, http://127.0.0.1:3001]` et `cors: [publicURL]`.
+`csrf: [publicURL, http://localhost:31001, http://127.0.0.1:31001]` et `cors: [publicURL]`.
 
 ### Endpoints exposés au bot
 
@@ -113,7 +116,7 @@ Authorization: users API-Key <PAYLOAD_API_KEY>
 Le bot les consomme via `src/services/payload.js` (`getGames`, `syncGames`, `upsertDiscordProfile`, …).
 
 ```bash
-curl -s http://localhost:3001/api/bot/summary | jq .
+curl -s http://localhost:31001/api/bot/summary | jq .
 ```
 
 ### Tableau de bord et statistiques (1.1.0)
@@ -131,12 +134,12 @@ Toutes les données viennent des collections **`commandUsages`** (une ligne par 
 
 ```bash
 # Enregistrer une interaction (fire and forget côté bot)
-curl -s -X POST http://localhost:3001/api/bot/usage \
+curl -s -X POST http://localhost:31001/api/bot/usage \
   -H 'Authorization: users API-Key <PAYLOAD_API_KEY>' -H 'Content-Type: application/json' \
   -d '{"commandName":"ping","userId":"123","username":"Exemple","outcome":"success","source":"chatInput"}'
 
 # Lire les statistiques (période : day | week | month | all)
-curl -s 'http://localhost:3001/api/bot/stats?period=day' \
+curl -s 'http://localhost:31001/api/bot/stats?period=day' \
   -H 'Authorization: users API-Key <PAYLOAD_API_KEY>' | jq .
 ```
 
@@ -159,14 +162,14 @@ le détail renvoyé par le bot, par exemple « Synchroniser le catalogue : termi
 Voir [`.env.example`](../.env.example). Les plus importantes pour le CMS :
 
 ```env
-DATABASE_URI=mongodb://127.0.0.1:27020/iamfabriceg_bot
+DATABASE_URI=mongodb://127.0.0.1:31017/iamfabriceg_bot
 PAYLOAD_SECRET=
 # Interne : bot -> CMS
-PAYLOAD_URL=http://127.0.0.1:3001
+PAYLOAD_URL=http://127.0.0.1:31001
 # Navigateur : origine autorisée dans csrf/cors
-PAYLOAD_PUBLIC_URL=http://localhost:3001
-CMS_PORT=3001
-BOT_WEBHOOK_URL=http://127.0.0.1:3012
+PAYLOAD_PUBLIC_URL=http://localhost:31001
+CMS_PORT=31001
+BOT_WEBHOOK_URL=http://127.0.0.1:31000
 WEBHOOK_SECRET=
 SEED_ADMIN_PASSWORD=Admin1234!
 ```
@@ -176,7 +179,7 @@ En Docker, les compose files surchargent automatiquement :
 - `DATABASE_URI=mongodb://mongo:27017/iamfabriceg_bot`
 - `PAYLOAD_URL=http://cms:3001`
 - `BOT_WEBHOOK_URL=http://bot:3000`
-- `PAYLOAD_PUBLIC_URL=http://localhost:3001` (dev) / `${PAYLOAD_PUBLIC_URL}` (prod)
+- `PAYLOAD_PUBLIC_URL=http://localhost:31001` (dev) / `${PAYLOAD_PUBLIC_URL}` (prod)
 
 ## 2. Front public
 
@@ -311,7 +314,7 @@ services. Le bot vérifie avec `timingSafeEqual` et journalise l'événement. Si
 ### Spinner infini sur « Add Social Link » / POST 401-403
 
 Cause : l'origine du navigateur n'est pas dans la liste CSRF de Payload. `serverURL=http://cms:3001`
-alors que le navigateur envoie `Origin: http://localhost:3001` : le cookie de session est ignoré, tous
+alors que le navigateur envoie `Origin: http://localhost:31001` : le cookie de session est ignoré, tous
 les POST admin échouent. Correctif : `PAYLOAD_PUBLIC_URL` + `csrf`/`cors` dans `payload.config.ts`, puis
 recréer le CMS. Vérification :
 

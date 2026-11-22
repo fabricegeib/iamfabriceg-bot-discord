@@ -31,12 +31,12 @@ corepack pnpm install --frozen-lockfile
 cp .env.example .env          # renseigner DISCORD_TOKEN, CLIENT_ID, GUILD_ID et les secrets CMS
 corepack pnpm cms:seed        # génère la clé API du bot + quelques données de base
 corepack pnpm deploy          # déploie les commandes sur GUILD_ID (test)
-corepack pnpm dev             # bot (port 3000)
-corepack pnpm cms:dev         # CMS (port 3001) — dans un second terminal
+corepack pnpm dev             # bot (port 31000)
+corepack pnpm cms:dev         # CMS (port 31001) — dans un second terminal
 corepack pnpm send:roles
 ```
 
-MongoDB doit être accessible sur `mongodb://127.0.0.1:27020/iamfabriceg_bot` (fourni par `pnpm docker:dev`).
+MongoDB doit être accessible sur `mongodb://127.0.0.1:31017/iamfabriceg_bot` (fourni par `pnpm docker:dev`).
 
 ### Tout faire via Docker (sans pnpm local)
 
@@ -80,14 +80,16 @@ corepack pnpm docker:dev
 
 | Service | URL | Rôle |
 |---|---|---|
-| `bot` | http://localhost:3012/healthz | Bot Discord + webhooks |
-| `cms` | http://localhost:3001/admin | Admin Payload |
-| `cms` | http://localhost:3001/ | Front public (lecture seule) |
-| `mongo` | localhost:27020 | Base MongoDB |
+| `bot` | http://localhost:31000/healthz | Bot Discord + webhooks |
+| `cms` | http://localhost:31001/admin | Admin Payload |
+| `cms` | http://localhost:31001/ | Front public (lecture seule) |
+| `mongo` | localhost:31017 | Base MongoDB |
 
-Les ports hôtes `27020` (Mongo) et `3012` (bot) sont utilisés pour éviter des conflits avec d'autres projets
-déjà présents sur `27017` et `3000`. Les ports internes des conteneurs restent `27017` et `3000`, donc
-`mongodb://mongo:27017/iamfabriceg_bot` et `http://bot:3000` restent inchangés.
+Convention de ports du projet, **identique en local, en Docker et sur le VPS** : `31000` (bot),
+`31001` (CMS), `31017` (MongoDB locale). Ces ports écartés des valeurs courantes évitent les
+conflits avec les autres projets. Les ports **internes** des conteneurs restent `3000`, `3001` et
+`27017` : `mongodb://mongo:27017/iamfabriceg_bot`, `http://bot:3000` et `http://cms:3001`
+restent inchangés, y compris le Forward Host de Nginx Proxy Manager.
 
 Le code est monté depuis l'hôte : les modifications sont visibles immédiatement (hot reload pour le CMS,
 redémarrage manuel du bot). Arrêt : `corepack pnpm docker:dev:down`.
@@ -130,7 +132,7 @@ Le CMS est un projet Next.js 16 / React 19 dans [`cms/`](./cms), dans le même w
 | **Webhooks** | `afterChange`, HMAC-SHA256, réception par le bot | [`docs/CMS.md#5-webhooks`](./docs/CMS.md#5-webhooks) |
 | **Dépannage** | Spinner admin, 401/403 CSRF, secrets, Turbopack | [`docs/CMS.md#6-dépannage`](./docs/CMS.md#6-dépannage) |
 
-Accès rapide : admin `http://localhost:3001/admin`, front `http://localhost:3001/`,
+Accès rapide : admin `http://localhost:31001/admin`, front `http://localhost:31001/`,
 santé `GET /api/bot/healthz`, résumé `GET /api/bot/summary`. Les hooks `afterChange` publient vers
 `BOT_WEBHOOK_URL/webhooks/payload` avec une signature HMAC-SHA256 (`x-payload-signature`).
 
@@ -148,20 +150,21 @@ Le lien d'invitation OAuth2 (avec `ManageRoles`) est dans `.env` (`DISCORD_INVIT
 Variables principales :
 
 ```env
-DATABASE_URI=mongodb://127.0.0.1:27020/iamfabriceg_bot
+DATABASE_URI=mongodb://127.0.0.1:31017/iamfabriceg_bot
 PAYLOAD_SECRET=<openssl rand -hex 32>
 # URL interne service-à-service (bot -> CMS)
-PAYLOAD_URL=http://127.0.0.1:3001
+PAYLOAD_URL=http://127.0.0.1:31001
 # Origine navigateur, autorisée dans csrf/cors du CMS (obligatoire pour les POST admin)
-PAYLOAD_PUBLIC_URL=http://localhost:3001
+PAYLOAD_PUBLIC_URL=http://localhost:31001
 PAYLOAD_API_KEY=<générée par pnpm cms:seed>
-BOT_WEBHOOK_URL=http://127.0.0.1:3012
+BOT_WEBHOOK_URL=http://127.0.0.1:31000
 WEBHOOK_SECRET=<même valeur dans le bot et le CMS>
 ```
 
 En Docker, `DATABASE_URI`, `PAYLOAD_URL` et `BOT_WEBHOOK_URL` sont surchargés automatiquement par les
-compose files (`mongo:27017`, `cms:3001`, `bot:3000`) ; `PAYLOAD_PUBLIC_URL` reste l'URL du navigateur
-(`http://localhost:3001` en dev, domaine public en prod). `serverURL` demeure l'URL interne : c'est
+compose files (`mongo:27017`, `cms:3001`, `bot:3000`) ; les ports hôtes `31000`/`31001`/`31017`
+sont mappés vers ces ports internes. `PAYLOAD_PUBLIC_URL` reste l'URL du navigateur
+(`http://localhost:31001` en dev, domaine public en prod). `serverURL` demeure l'URL interne : c'est
 `csrf`/`cors` qui autorise l'origine du navigateur.
 
 ## Commandes du bot
@@ -241,7 +244,7 @@ corepack pnpm start            # bot
 corepack pnpm deploy           # commandes slash
 corepack pnpm send:roles
 corepack pnpm twitch:subscribe <channel>
-corepack pnpm cms:dev          # CMS en local (port 3001)
+corepack pnpm cms:dev          # CMS en local (port 31001)
 corepack pnpm cms:build        # build Next.js
 corepack pnpm cms:seed         # admin + clé API bot
 # équivalent Docker : docker compose -f docker-compose.dev.yml --profile tools run --rm cms-seed

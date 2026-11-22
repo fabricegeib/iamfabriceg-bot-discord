@@ -1,13 +1,15 @@
 # Dossier prêt pour le VPS
 
-**Avant de copier** : dans `.env`, remplacer `MONGO_USER` et `MONGO_PASSWORD` dans la ligne
-`DATABASE_URI` par les identifiants de ta MongoDB existante. Le reste est déjà prêt.
+**Avant de copier** : vérifie la ligne `DATABASE_URI` de `.env`. Les identifiants doivent être
+**encodés** dans l’URL (`!` → `%21`, `@` → `%40`, `#` → `%23`) et conserver `?authSource=admin`.
+Le mot de passe est déjà encodé dans le fichier fourni.
 
-Copier **ce dossier entier** sur le VPS :
+Copier les fichiers **et l’archive** sur le VPS :
 
 ```bash
 ssh debian@51.178.39.128 'mkdir -p ~/docker/iamfabriceg-bot'
 scp -r deploy/. debian@51.178.39.128:~/docker/iamfabriceg-bot/
+scp backups/iamfabriceg-bot-2026-11-22.archive.gz debian@51.178.39.128:~/docker/iamfabriceg-bot/
 ```
 
 Il contient :
@@ -15,16 +17,28 @@ Il contient :
 | Fichier | Rôle |
 |---|---|
 | `docker-compose.yml` | La stack **bot + CMS uniquement** (aucun conteneur MongoDB), réseau NPM intégré |
-| `.env` | Tous les secrets, l’URI MongoDB externe et le domaine — **ne pas committer, ne pas partager** |
+| `.env` | Tous les secrets, l’URI MongoDB externe encodée et le domaine — **ne pas committer, ne pas partager** |
 | `.env.example` | Modèle commenté si tu dois recréer le `.env` |
+
+Ports hôtes du projet : `31000` (bot), `31001` (CMS), liés à `127.0.0.1`. Ports internes des
+conteneurs inchangés (`3000`/`3001`) : NPM vise toujours `cms:3001`.
 
 Sur le VPS, la procédure complète est dans [`docs/DEPLOY-VPS.md`](../docs/DEPLOY-VPS.md).
 En résumé :
 
 ```bash
 cd ~/docker/iamfabriceg-bot
+docker login registry.fabricegeib.com
 docker compose up -d
-# importer l'archive dans la MongoDB existante (voir le guide)
+
+# Importer dans TON conteneur MongoDB existant (nommé `mongodb`) :
+docker run --rm \
+  --network container:mongodb \
+  --env-file .env \
+  -v "$PWD/iamfabriceg-bot-2026-11-22.archive.gz:/backup/archive.gz:ro" \
+  mongo:8 sh -c \
+  'MONGO_URI=$(printf "%s" "$DATABASE_URI" | sed "s#51.178.39.128#127.0.0.1#"); mongorestore --uri="$MONGO_URI" --archive=/backup/archive.gz --gzip --drop'
+
 docker compose restart bot cms
 # créer le Proxy Host dans Nginx Proxy Manager : cms:3001
 ```

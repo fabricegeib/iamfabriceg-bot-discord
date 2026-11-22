@@ -10,7 +10,7 @@ Dans `.env` :
 # URL interne service-à-service (bot -> CMS)
 PAYLOAD_URL=http://cms:3001
 # Origine navigateur autorisée dans csrf/cors (admin Payload)
-PAYLOAD_PUBLIC_URL=http://localhost:3001
+PAYLOAD_PUBLIC_URL=http://localhost:31001
 PAYLOAD_AUTH_SLUG=users
 PAYLOAD_GAMES_SLUG=games
 PAYLOAD_API_KEY=...
@@ -132,7 +132,7 @@ l'envoie à `POST {BOT_WEBHOOK_URL}/admin/actions/{action}`. Le bot refuse toute
 connaît que `deploy-commands` et `sync-commands`. Le secret ne transite jamais par le navigateur.
 
 ```bash
-curl -s -X POST http://localhost:3001/api/bot/admin/action \
+curl -s -X POST http://localhost:31001/api/bot/admin/action \
   -H 'Content-Type: application/json' -b cookies.txt \
   -d '{"action":"sync-commands"}'
 # → { "ok": true, "action": "sync-commands", "status": 200,

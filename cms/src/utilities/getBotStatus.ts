@@ -17,7 +17,7 @@ let cached: { at: number; value: BotStatus } | null = null
 export async function getBotStatus(): Promise<BotStatus> {
   if (cached && Date.now() - cached.at < CACHE_MS) return cached.value
 
-  const base = (process.env.BOT_WEBHOOK_URL || 'http://127.0.0.1:3012').replace(/\/+$/, '')
+  const base = (process.env.BOT_WEBHOOK_URL || 'http://127.0.0.1:31000').replace(/\/+$/, '')
   const started = Date.now()
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 1500)

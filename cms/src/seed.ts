@@ -224,7 +224,7 @@ async function seedSettings(payload: any) {
       botName: 'iamfabriceg Bot',
       description: 'Bot Discord multijeux avec catalogue Payload CMS.',
       version: '1.1.0',
-      publicUrl: process.env.PAYLOAD_PUBLIC_URL || process.env.PUBLIC_URL || 'http://localhost:3001',
+      publicUrl: process.env.PAYLOAD_PUBLIC_URL || process.env.PUBLIC_URL || 'http://localhost:31001',
       discordInvite: DISCORD_INVITE,
       maintenanceMode: false,
       loyalty: {

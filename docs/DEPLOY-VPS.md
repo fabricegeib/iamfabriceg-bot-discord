@@ -70,21 +70,20 @@ docker network create nginx-proxy-manager
 # Connexion au registre privé :
 docker login registry.fabricegeib.com
 
-# Tester l'accès à la MongoDB existante avant de lancer la stack :
-docker run --rm --env-file .env mongo:8 sh -c \
-  'mongosh "$DATABASE_URI" --quiet --eval "printjson(db.adminCommand({ping:1}))"'
+# Tester l'accès à la MongoDB existante avant de lancer la stack.
+# Le conteneur jetable partage le réseau de ton conteneur `mongodb` :
+# 127.0.0.1:27017 y désigne directement ta MongoDB, sans port public.
+docker run --rm --network container:mongodb --env-file .env mongo:8 sh -c \
+  'MONGO_URI=$(printf "%s" "$DATABASE_URI" | sed "s#51.178.39.128#127.0.0.1#"); mongosh "$MONGO_URI" --quiet --eval "printjson(db.adminCommand({ping:1}))"'
 ```
 
-> Si ce test échoue avec `ECONNREFUSED` : ta MongoDB écoute peut-être seulement sur l’interface
-> locale. Depuis le VPS, teste alors avec l’hôte du VPS et le réseau de l’hôte :
->
-> ```bash
-> docker run --rm --network host --env-file .env mongo:8 sh -c \
->   'mongosh "${DATABASE_URI/51.178.39.128/127.0.0.1}" --quiet --eval "printjson(db.adminCommand({ping:1}))"'
-> ```
->
-> Si ce variant fonctionne, remplace `51.178.39.128` par `127.0.0.1` dans le `DATABASE_URI`
-> du `.env` sur le VPS, puis recrée les conteneurs (étape 6).
+> Si ton conteneur MongoDB porte un autre nom, remplace `mongodb` après `container:` dans toutes
+> les commandes de ce guide.
+
+> Si ce test échoue avec `Authentication failed` : vérifie l’encodage du mot de passe dans
+> `DATABASE_URI` (`!` → `%21`, `@` → `%40`, `#` → `%23`) et `authSource=admin`.
+> Si le conteneur `mongodb` n’existe pas sous ce nom, liste-les avec `docker ps --format '{{.Names}}'`
+> et corrige le `--network container:...`.
 
 ---
 
@@ -100,6 +99,10 @@ docker compose ps
 MongoDB et aucun service `cms-seed`. Les images sont tirées du registre si besoin
 (`pull_policy: if_not_present`).
 
+Ports hôtes du projet (identiques en local et en prod) : `31000` pour le bot, `31001` pour le
+CMS, tous deux liés à `127.0.0.1`. Les ports internes des conteneurs restent `3000`/`3001`, donc
+NPM continue de viser `cms:3001`.
+
 À ce stade la base importée n’est pas encore restaurée : c’est l’étape 5.
 
 ---
@@ -111,16 +114,18 @@ MongoDB et aucun service `cms-seed`. Les images sont tirées du registre si beso
 sha256sum iamfabriceg-bot-2026-11-22.archive.gz
 # 390180301D0CFE0027009CFF388D2DA57B18160F5B60D1F24E4466A49F7EFA1F
 
-# Restaurer dans la MongoDB existante, via un conteneur jetable :
+# Restaurer DANS ton conteneur MongoDB existant (nommé `mongodb`) :
+# le conteneur jetable partage son réseau, donc 127.0.0.1:27017 = ta MongoDB.
 docker run --rm \
+  --network container:mongodb \
   --env-file .env \
   -v "$PWD/iamfabriceg-bot-2026-11-22.archive.gz:/backup/archive.gz:ro" \
   mongo:8 sh -c \
-  'mongorestore --uri="$DATABASE_URI" --archive=/backup/archive.gz --gzip --drop'
+  'MONGO_URI=$(printf "%s" "$DATABASE_URI" | sed "s#51.178.39.128#127.0.0.1#"); mongorestore --uri="$MONGO_URI" --archive=/backup/archive.gz --gzip --drop'
 
-# Contrôle rapide
-docker run --rm --env-file .env mongo:8 sh -c \
-  'mongosh "$DATABASE_URI" --quiet --eval "printjson({collections:db.getCollectionNames().length, users:db.users.countDocuments({}), games:db.games.countDocuments({})})"'
+# Contrôle rapide, toujours dans ton conteneur MongoDB :
+docker run --rm --network container:mongodb --env-file .env mongo:8 sh -c \
+  'MONGO_URI=$(printf "%s" "$DATABASE_URI" | sed "s#51.178.39.128#127.0.0.1#"); mongosh "$MONGO_URI" --quiet --eval "printjson({collections:db.getCollectionNames().length, users:db.users.countDocuments({}), games:db.games.countDocuments({})})"'
 ```
 
 > ⚠️ `--drop` **remplace les collections de la base `iamfabriceg_bot` uniquement**. Vérifie que
@@ -182,8 +187,8 @@ Depuis le VPS :
 
 ```bash
 docker compose ps
-curl -fsS http://127.0.0.1:3001/api/bot/healthz
-curl -fsS http://127.0.0.1:3012/healthz
+curl -fsS http://127.0.0.1:31001/api/bot/healthz
+curl -fsS http://127.0.0.1:31000/healthz
 ```
 
 Depuis ton PC :
@@ -232,7 +237,8 @@ Retour arrière : remettre `1.1.0` à la place de `1.1.0-slim`, puis relancer le
 | Symptôme | Correctif |
 |---|---|
 | `Authentication failed` sur MongoDB | Vérifier identifiants, `authSource=admin` et encodage des caractères spéciaux, puis `up -d --force-recreate bot cms` |
-| `ECONNREFUSED 51.178.39.128:27017` | MongoDB écoute sur `127.0.0.1` : voir le test de l’étape 3, puis remplacer l’hôte dans `DATABASE_URI` |
+| `No such container: mongodb` | `docker ps --format '{{.Names}}'` puis corriger le `--network container:...` (étapes 3 et 5) |
+| `ECONNREFUSED` sur l’import | Le conteneur ciblé n’écoute pas sur `27017` ; vérifier son nom et son port avec `docker ps` |
 | `unauthorized: authentication required` au `pull` | `docker login registry.fabricegeib.com` |
 | `network nginx-proxy-manager not found` | `docker network create nginx-proxy-manager` |
 | 502 dans NPM | Vérifier `Forward Hostname = cms` et `Port = 3001`, puis reload du Proxy Host |

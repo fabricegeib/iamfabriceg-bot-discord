@@ -36,12 +36,13 @@ soit `iamfabriceg Bot` (affichage), soit `iamfabriceg-bot-` (technique).
 | `botSettings.botName` | `iamfabriceg Bot` | Valeur par défaut du global Payload |
 | `service` du `/healthz` bot | `iamfabriceg-bot` | Identifiant machine lisible |
 | Titre du front public | `iamfabriceg Bot` | Metadata Next.js |
-| URL locale bot | `http://127.0.0.1:3012` | — |
-| URL locale CMS | `http://127.0.0.1:3001` | Admin `/admin`, front `/` |
-| URL Docker bot | `http://bot:3000` | Depuis le réseau Compose |
-| URL Docker CMS | `http://cms:3001` | Depuis le réseau Compose |
+| Ports hôtes du projet | `31000` bot, `31001` CMS, `31017` Mongo local | Communs local / Docker / VPS |
+| URL locale bot | `http://127.0.0.1:31000` | — |
+| URL locale CMS | `http://127.0.0.1:31001` | Admin `/admin`, front `/` |
+| URL Docker bot | `http://bot:3000` | Port interne inchangé, depuis le réseau Compose |
+| URL Docker CMS | `http://cms:3001` | Port interne inchangé, depuis le réseau Compose |
 | `PAYLOAD_URL` | URL interne service-à-service | Bot → CMS (`http://cms:3001` en Docker) |
-| `PAYLOAD_PUBLIC_URL` | Origine navigateur / CSRF | `http://localhost:3001` en dev, domaine public en prod |
+| `PAYLOAD_PUBLIC_URL` | Origine navigateur / CSRF | `http://localhost:31001` en dev, domaine public en prod |
 
 Règles de nommage Payload : slugs de collections au pluriel en camelCase (`commandUsages`, `discordRoles`,
 `botSettings`), noms de champs en camelCase (`socialLinks`, `announcementChannelId`), et une seule

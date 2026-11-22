@@ -31,7 +31,7 @@ services:
       BOT_WEBHOOK_URL: http://bot:3000
     ports:
       # NPM passe par le réseau Docker ; ces ports restent sur 127.0.0.1.
-      - "127.0.0.1:3012:3000"
+      - "127.0.0.1:31000:3000"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/healthz"]
       interval: 30s
@@ -56,7 +56,7 @@ services:
       PUBLIC_URL: ${DEPLOY_URL:-https://bot.iamfabriceg.xyz}
       BOT_WEBHOOK_URL: http://bot:3000
     ports:
-      - "127.0.0.1:3001:3001"
+      - "127.0.0.1:31001:3001"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/api/bot/healthz"]
       interval: 30s

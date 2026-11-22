@@ -57,7 +57,7 @@ function json(res, status, payload) {
  * Serveur HTTP léger : healthcheck + webhooks Payload et Twitch EventSub.
  * `onEvent(type, payload)` est appelé pour chaque notification validée.
  */
-function createWebhookServer({ port = 3000, secret = "", twitchSecret = "", onEvent = () => {} } = {}) {
+function createWebhookServer({ port = 31000, secret = "", twitchSecret = "", onEvent = () => {} } = {}) {
   const startedAt = Date.now();
 
   async function handler(req, res) {
