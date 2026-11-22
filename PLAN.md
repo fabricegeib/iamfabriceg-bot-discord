@@ -270,6 +270,9 @@ Nouvelle PR prévue avec `build/modernisation-2026` comme base afin de préserve
 - [x] Validations : `pnpm lint`, `pnpm test` (20/20), `pnpm --filter cms lint`, `pnpm --filter cms build`, `docker compose config` (dev + prod)
 - [x] Smoke tests HTTP : `/api/bot/healthz`, `/`, `/admin`, `/api/bot/summary`, `/api/games` (clé API), `/api/bot/profile` (401 sans clé)
 - [x] Test bout en bout du webhook : PATCH Payload → HMAC `x-payload-signature` → bot accepte (200) et rejette une signature invalide (401)
+- [x] Service `cms-seed` (profil `tools`) : seed 100 % Docker, sans pnpm local
+- [x] Correction Docker : Corepack absent de Node 26 → pnpm installé via npm dans les images et le compose dev
+- [x] `/profil` sans `PAYLOAD_API_KEY` : message explicite au lieu d'un 401 opaque
 - [ ] Commit, push et création de la nouvelle PR
 
 ### Résultat des validations (23/11/2026)
@@ -281,6 +284,8 @@ Nouvelle PR prévue avec `build/modernisation-2026` comme base afin de préserve
 - `docker compose -f docker-compose.dev.yml config` et `...prod.yml config` : valides
 - Seed Payload : admin `bot@iamfabriceg.local`, clé API générée, 5 jeux et 5 commandes
 - Webhook : signature HMAC vérifiée côté bot, mauvaise signature rejetée en 401
+- Seed via Docker (MongoDB isolé sur le port 37017) : exit 0, clé API 64 hex générée
+- `docker compose config` (dev + prod) revalidé après ajout de `cms-seed`
 
 ### Commandes de validation
 
@@ -291,6 +296,7 @@ corepack pnpm test
 corepack pnpm --filter cms build
 docker compose -f docker-compose.dev.yml config
 docker compose -f docker-compose.prod.yml config
+docker compose -f docker-compose.dev.yml --profile tools run --rm cms-seed
 ```
 
 ### Actions attendues de l'utilisateur

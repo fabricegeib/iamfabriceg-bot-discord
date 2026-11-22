@@ -19,6 +19,18 @@ corepack pnpm docker:dev
 | Endpoint résumé bot | http://localhost:3001/api/bot/summary |
 | MongoDB | mongodb://localhost:27017/iamfabriceg_bot |
 
+Premier lancement (seed via Docker, sans pnpm local) :
+
+```bash
+docker compose -f docker-compose.dev.yml --profile tools run --rm cms-seed
+# copier PAYLOAD_API_KEY=... dans .env
+docker compose -f docker-compose.dev.yml up -d --force-recreate bot
+```
+
+Le service `cms-seed` est dans le profil `tools` : il ne démarre jamais avec `up -d`, uniquement avec
+`run --rm`. En production : `docker compose -f docker-compose.prod.yml build cms` puis la même commande
+avec `-f docker-compose.prod.yml`.
+
 ### Sans Docker
 
 ```bash
@@ -31,14 +43,16 @@ MongoDB doit tourner localement (par exemple via `docker compose -f docker-compo
 
 ## 2. Premier accès
 
-`pnpm cms:seed` crée :
+`pnpm cms:seed` — ou `docker compose -f docker-compose.dev.yml --profile tools run --rm cms-seed` — crée :
 
 - un utilisateur `bot@iamfabriceg.local` avec le mot de passe `SEED_ADMIN_PASSWORD` (`Admin1234!` par défaut) ;
 - une **clé API** affichée en console sous la forme `PAYLOAD_API_KEY=...` à copier dans `.env` ;
-- quelques jeux (Fortnite, GTA V, Rocket League, Aniimo, GOALS) et commandes de démonstration.
+- 5 jeux (Fortnite, GTA V, Rocket League, Aniimo, GOALS), 5 commandes de démonstration et le global `botSettings`.
 
-Le seed est idempotent : il met à jour l'existant au lieu de le dupliquer. Changez le mot de passe admin
-après le premier login.
+Le seed est idempotent pour les documents : il met à jour l'existant au lieu de le dupliquer. En revanche,
+**chaque exécution génère une nouvelle clé API** et l'affiche : recopiez toujours la dernière valeur dans
+`.env`, puis recréez le bot (`docker compose -f docker-compose.dev.yml up -d --force-recreate bot`).
+Changez le mot de passe admin après le premier login.
 
 ## 3. Collections et global
 

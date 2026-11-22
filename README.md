@@ -18,7 +18,8 @@ Bot Discord personnel de [iamfabriceg](https://iamfabriceg.xyz), écrit en **Com
 ## Prérequis
 
 - **Node.js 26 LTS** (minimum 22.12) — images Docker `node:26-alpine`.
-- **pnpm 10.15.0** via Corepack : `corepack enable && corepack prepare pnpm@10.15.0 --activate`.
+- **pnpm 10.15.0** : via Corepack si disponible (`corepack enable && corepack prepare pnpm@10.15.0 --activate`),
+  sinon les images Docker l'installent automatiquement avec npm.
 - **Docker Engine 29+** et **Compose v5+** pour les environnements conteneurisés.
 - Un serveur Discord avec le bot invité avec les permissions minimales (voir `/permissions`).
 
@@ -35,6 +36,33 @@ corepack pnpm send:roles
 ```
 
 MongoDB doit être accessible sur `mongodb://127.0.0.1:27017/iamfabriceg_bot` (fourni par `pnpm docker:dev`).
+
+### Tout faire via Docker (sans pnpm local)
+
+```bash
+# 1. Seed du CMS : crée l'admin, génère PAYLOAD_API_KEY et les données de base
+docker compose -f docker-compose.dev.yml --profile tools run --rm cms-seed
+
+# 2. Copier la ligne PAYLOAD_API_KEY=... affichée dans .env
+
+# 3. Démarrer la stack (MongoDB est lancé automatiquement par depends_on)
+docker compose -f docker-compose.dev.yml up -d
+```
+
+Le service `cms-seed` est dans le profil `tools` : il ne démarre jamais avec `up -d`, uniquement avec
+`run --rm`. En production, construire d'abord l'image CMS :
+
+```bash
+docker compose -f docker-compose.prod.yml build cms
+docker compose -f docker-compose.prod.yml --profile tools run --rm cms-seed
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Après avoir collé une nouvelle clé dans `.env`, recréer le bot pour qu'il la prenne en compte :
+
+```bash
+docker compose -f docker-compose.dev.yml up -d --force-recreate bot
+```
 
 Déploiement global des commandes (prod, propagation jusqu'à 1 h) :
 
@@ -177,14 +205,16 @@ corepack pnpm twitch:subscribe <channel>
 corepack pnpm cms:dev          # CMS en local (port 3001)
 corepack pnpm cms:build        # build Next.js
 corepack pnpm cms:seed         # admin + clé API bot
+# équivalent Docker : docker compose -f docker-compose.dev.yml --profile tools run --rm cms-seed
 corepack pnpm lint
 corepack pnpm test             # 20 tests node:test
 corepack pnpm docker:dev
 corepack pnpm docker:prod
 ```
 
-> Sur cet environnement Windows,Corepack fonctionne mais le binaire `pnpm` n'est pas sur le PATH : utiliser
-> `corepack pnpm ...`. Si les scripts échouent avec `'node' n'est pas reconnu`, ajouter `--script-shell=pwsh`.
+> Sur cet environnement Windows, le binaire `pnpm` n'est pas sur le PATH : utiliser `corepack pnpm ...` quand
+> Corepack est disponible (Node ≤ 24), ou les commandes `docker compose ... run --rm cms-seed` ci-dessus.
+> Si les scripts échouent avec `'node' n'est pas reconnu`, ajouter `--script-shell=pwsh`.
 
 ## CI
 

@@ -1,7 +1,8 @@
 FROM node:26-alpine AS deps
 
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
+# Corepack n'est plus fourni avec Node 26 : on installe pnpm via npm.
+RUN npm install -g pnpm@10.15.0
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY cms/package.json ./cms/package.json
@@ -15,7 +16,7 @@ RUN pnpm --filter cms build
 FROM node:26-alpine AS runner
 
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
+RUN npm install -g pnpm@10.15.0
 
 COPY --from=deps /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
 COPY --from=deps /app/node_modules ./node_modules

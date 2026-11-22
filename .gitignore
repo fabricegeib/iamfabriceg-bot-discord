@@ -10,6 +10,7 @@ cms/.env.*
 cms/.next/
 cms/next-env.d.ts
 coverage/
+.pnpm-store/
 *.log
 *.Identifier
 .DS_Store

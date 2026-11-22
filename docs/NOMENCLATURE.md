@@ -30,9 +30,9 @@ soit `iamfabriceg Bot` (affichage), soit `iamfabriceg-bot-` (technique).
 | Conteneur MongoDB | `iamfabriceg-bot-mongo` | `container_name` |
 | Image bot | `iamfabriceg/bot-discord:latest` | Namespace Docker = pseudo |
 | Image CMS | `iamfabriceg/bot-cms:latest` | Namespace Docker = pseudo |
-| Volumes Docker | `iamfabriceg-bot-mongo-data`, `iamfabriceg-bot-node-modules`, `iamfabriceg-bot-cms-node-modules`, `iamfabriceg-bot-cms-next` | Préfixe systématique |
+| Volumes Docker | `iamfabriceg-bot-mongo-data`, `iamfabriceg-bot-node-modules`, `iamfabriceg-bot-cms-store`, `iamfabriceg-bot-cms-node-modules`, `iamfabriceg-bot-cms-next` | Préfixe systématique |
 | Base MongoDB | `iamfabriceg_bot` | Snake case (convention MongoDB) |
-| Utilisateur admin CMS | `bot@iamfabriceg.local` | Créé par `pnpm cms:seed` |
+| Utilisateur admin CMS | `bot@iamfabriceg.local` | Créé par `pnpm cms:seed` ou `docker compose ... run --rm cms-seed` |
 | `botSettings.botName` | `iamfabriceg Bot` | Valeur par défaut du global Payload |
 | `service` du `/healthz` bot | `iamfabriceg-bot` | Identifiant machine lisible |
 | Titre du front public | `iamfabriceg Bot` | Metadata Next.js |

@@ -2,8 +2,8 @@ FROM node:26-alpine
 
 WORKDIR /app
 
-# pnpm via Corepack (fourni avec Node 26)
-RUN corepack enable && corepack prepare pnpm@10.15.0 --activate
+# pnpm via npm : Corepack n'est plus fourni avec Node 26.
+RUN npm install -g pnpm@10.15.0
 
 # Copier les manifests du workspace pour tirer parti du cache Docker
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./

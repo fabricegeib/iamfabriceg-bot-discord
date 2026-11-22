@@ -1,6 +1,6 @@
 name: iamfabriceg-bot
 
-# Développement : code monté depuis l'hôte, pnpm installé dans chaque conteneur.
+# Développement : code monté depuis l'hôte, pnpm installé via npm dans chaque conteneur.
 # Démarrage : pnpm docker:dev  (ou docker compose -f docker-compose.dev.yml up -d)
 
 services:
@@ -38,7 +38,7 @@ services:
       - ./:/app
       - iamfabriceg-bot-node-modules:/app/node_modules
     command: >-
-      sh -c "corepack enable && corepack prepare pnpm@10.15.0 --activate &&
+      sh -c "npm install -g pnpm@10.15.0 >/dev/null &&
       pnpm install --frozen-lockfile --filter iamfabriceg-bot-discord... &&
       pnpm dev"
     ports:
@@ -50,6 +50,34 @@ services:
       retries: 3
       start_period: 20s
     restart: unless-stopped
+
+  # Usage ponctuel : docker compose -f docker-compose.dev.yml --profile tools run --rm cms-seed
+  cms-seed:
+    image: node:26-alpine
+    container_name: iamfabriceg-bot-cms-seed
+    profiles: ["tools"]
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+      PORT: "3001"
+      CMS_PORT: "3001"
+      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
+      PAYLOAD_URL: http://cms:3001
+      BOT_WEBHOOK_URL: http://bot:3000
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - iamfabriceg-bot-cms-store:/app/node_modules
+      - iamfabriceg-bot-cms-node-modules:/app/cms/node_modules
+    command: >-
+      sh -c "npm install -g pnpm@10.15.0 >/dev/null &&
+      pnpm install --frozen-lockfile --filter cms... &&
+      pnpm --filter cms seed"
+    restart: "no"
 
   cms:
     image: node:26-alpine
@@ -69,10 +97,11 @@ services:
     working_dir: /app
     volumes:
       - ./:/app
-      - iamfabriceg-bot-cms-node-modules:/app/node_modules
+      - iamfabriceg-bot-cms-store:/app/node_modules
+      - iamfabriceg-bot-cms-node-modules:/app/cms/node_modules
       - iamfabriceg-bot-cms-next:/app/cms/.next
     command: >-
-      sh -c "corepack enable && corepack prepare pnpm@10.15.0 --activate &&
+      sh -c "npm install -g pnpm@10.15.0 >/dev/null &&
       pnpm install --frozen-lockfile --filter cms... &&
       pnpm --filter cms dev"
     ports:
@@ -88,5 +117,6 @@ services:
 volumes:
   iamfabriceg-bot-mongo-data:
   iamfabriceg-bot-node-modules:
+  iamfabriceg-bot-cms-store:
   iamfabriceg-bot-cms-node-modules:
   iamfabriceg-bot-cms-next:

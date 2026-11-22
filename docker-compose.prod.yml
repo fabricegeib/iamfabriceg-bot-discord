@@ -46,6 +46,26 @@ services:
       start_period: 20s
     restart: unless-stopped
 
+  # Usage ponctuel : docker compose -f docker-compose.prod.yml --profile tools run --rm cms-seed
+  cms-seed:
+    image: iamfabriceg/bot-cms:latest
+    container_name: iamfabriceg-bot-cms-seed
+    profiles: ["tools"]
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      CMS_PORT: "3001"
+      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
+      PAYLOAD_URL: http://cms:3001
+      BOT_WEBHOOK_URL: http://bot:3000
+    command: ["pnpm", "--filter", "cms", "seed"]
+    restart: "no"
+
   cms:
     build:
       context: .

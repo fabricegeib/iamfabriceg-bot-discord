@@ -121,6 +121,10 @@ class PayloadClient {
 
   /** Écriture : associe ou met à jour un profil Discord dans le CMS. */
   async upsertDiscordProfile(discordId, data = {}) {
+    // L'endpoint /bot/profile exige une clé API. Sans clé, on répond par un
+    // message explicite plutôt que par un 401 opaque ; la clé peut être ajoutée
+    // plus tard dans .env sans modifier le code.
+    this.#requireWrite();
     return this.custom("bot/profile", { method: "POST", body: { discordId, ...data } });
   }
 
