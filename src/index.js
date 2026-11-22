@@ -1,136 +1,81 @@
-// const { token } = require("./config.json");
-require("dotenv").config();
-const fs = require("node:fs");
 const path = require("node:path");
-const { Client, Collection, GatewayIntentBits } = require("discord.js");
+const { Client, Collection, EmbedBuilder, GatewayIntentBits } = require("discord.js");
+const { getEnv } = require("./config/env");
+const { loadCommands, loadEvents } = require("./utils/loaders");
+const { createLogger, setLevel } = require("./services/logger");
+const { createWebhookServer } = require("./services/webhook-server");
+const { handleNotification } = require("./services/twitch-eventsub");
 
-// const eventHandler = require("./handlers/eventHandler");
+const log = createLogger("bot");
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
+async function main() {
+  let env;
+  try {
+    env = getEnv();
+  } catch (error) {
+    console.error(`❌ ${error.message}`);
+    process.exit(1);
+  }
+  setLevel(env.LOG_LEVEL);
+
+  // GuildMessages est nécessaire pour /prune ; MessageContent (privilégié) n'est pas utilisé.
+  const client = new Client({
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+  });
+  client.commands = new Collection();
+
+  client.commands = loadCommands(path.join(__dirname, "commands"));
+  loadEvents(path.join(__dirname, "events"), client);
+
+  const announceChannelId = env.ANNOUNCEMENT_CHANNEL_ID || env.LOG_CHANNEL_ID;
+
+  async function onWebhookEvent(type, payload) {
+    if (type.startsWith("twitch.")) {
+      await handleNotification(type, payload, client);
+      return;
+    }
+
+    if (!announceChannelId || !payload?.doc) return;
+    const channel = await client.channels.fetch(announceChannelId).catch(() => null);
+    if (!channel?.isTextBased()) return;
+
+    const doc = payload.doc;
+    const embed = new EmbedBuilder()
+      .setColor(0x8b5cf6)
+      .setTitle(`📢 ${doc.title || doc.name || "Contenu publié"}`)
+      .setDescription(doc.description || doc.excerpt || "Nouveau contenu publié sur le site.")
+      .setTimestamp();
+    if (env.PAYLOAD_URL && doc.slug) embed.setURL(`${env.PAYLOAD_URL}/${doc.slug}`);
+    await channel.send({ embeds: [embed] });
+  }
+
+  const webhook = createWebhookServer({
+    port: env.PORT,
+    secret: env.WEBHOOK_SECRET,
+    twitchSecret: env.TWITCH_CLIENT_SECRET,
+    onEvent: onWebhookEvent,
+  });
+
+  process.on("unhandledRejection", (error) => log.error("Promesse rejetée non gérée", error));
+  process.on("uncaughtException", (error) => log.error("Exception non gérée", error));
+
+  let shuttingDown = false;
+  async function shutdown(signal) {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    log.info(`Arrêt demandé (${signal})`);
+    await webhook.stop();
+    client.destroy();
+    process.exit(0);
+  }
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+
+  await webhook.start();
+  await client.login(env.DISCORD_TOKEN);
+}
+
+main().catch((error) => {
+  log.error("Démarrage impossible", error);
+  process.exit(1);
 });
-
-// client.commands = new Collection();
-
-// const commandsPath = path.join(__dirname, "commands");
-// const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith(".js"));
-
-// for (const file of commandFiles) {
-//   const filePath = path.join(commandsPath, file);
-//   const command = require(filePath);
-//   client.commands.set(command.data.name, command);
-// }
-
-// const eventsPath = path.join(__dirname, "events");
-// const eventFiles = fs.readdirSync(eventsPath).filter((file) => file.endsWith(".js"));
-
-// for (const file of eventFiles) {
-//   const filePath = path.join(eventsPath, file);
-//   const event = require(filePath);
-//   if (event.once) {
-//     client.once(event.name, (...args) => event.execute(...args));
-//   } else {
-//     client.on(event.name, (...args) => event.execute(...args));
-//   }
-// }
-
-// eventHandler(client);
-
-client.commands = new Collection();
-
-// Function to load commands from a directory
-const loadCommands = (dirPath) => {
-  const commandFiles = fs.readdirSync(dirPath).filter((file) => file.endsWith(".js"));
-  for (const file of commandFiles) {
-    const filePath = path.join(dirPath, file);
-    const command = require(filePath);
-    if ("data" in command && "execute" in command) {
-      client.commands.set(command.data.name, command);
-    } else {
-      console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-    }
-  }
-};
-
-// Recursively load all commands
-const loadAllCommands = (dirPath) => {
-  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-  for (const entry of entries) {
-    const entryPath = path.join(dirPath, entry.name);
-    if (entry.isDirectory()) {
-      loadAllCommands(entryPath);
-    } else if (entry.isFile() && entry.name.endsWith(".js")) {
-      loadCommands(dirPath);
-    }
-  }
-};
-
-// Load all commands from the commands directory
-loadAllCommands(path.join(__dirname, "commands"));
-
-// Function to load events from a directory
-const loadEvents = (dirPath) => {
-  const eventFiles = fs.readdirSync(dirPath).filter((file) => file.endsWith(".js"));
-  for (const file of eventFiles) {
-    const filePath = path.join(dirPath, file);
-    const event = require(filePath);
-    if (event.once) {
-      client.once(event.name, (...args) => event.execute(...args));
-    } else {
-      client.on(event.name, (...args) => event.execute(...args));
-    }
-  }
-};
-
-// Recursively load all events
-const loadAllEvents = (dirPath) => {
-  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-  for (const entry of entries) {
-    const entryPath = path.join(dirPath, entry.name);
-    if (entry.isDirectory()) {
-      loadAllEvents(entryPath);
-    } else if (entry.isFile() && entry.name.endsWith(".js")) {
-      loadEvents(dirPath);
-    }
-  }
-};
-
-// Load all events from the events directory
-loadAllEvents(path.join(__dirname, "events"));
-
-// // Gestionnaire d'interactions pour les commandes slash
-// client.on('interactionCreate', async interaction => {
-//   if (!interaction.isChatInputCommand()) return;
-
-//   const command = client.commands.get(interaction.commandName);
-
-//   if (!command) {
-//     console.error(`Commande ${interaction.commandName} introuvable.`);
-//     return;
-//   }
-
-//   try {
-//     await command.execute(interaction);
-//   } catch (error) {
-//     console.error(`Erreur lors de l'exécution de ${interaction.commandName}:`, error);
-
-//     if (interaction.replied || interaction.deferred) {
-//       await interaction.followUp({
-//         content: 'Une erreur est survenue!',
-//         ephemeral: true
-//       });
-//     } else {
-//       await interaction.reply({
-//         content: 'Une erreur est survenue!',
-//         ephemeral: true
-//       });
-//     }
-//   }
-// });
-
-client.login(process.env.DISCORD_TOKEN);

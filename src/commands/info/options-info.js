@@ -3,13 +3,14 @@ const { SlashCommandBuilder } = require("discord.js");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("options-info")
-    .setDescription("Information about the options provided.")
+    .setDescription("Renvoie la valeur saisie")
+    .setDescriptionLocalizations({ fr: "Renvoie la valeur saisie" })
     .addStringOption((option) =>
-      option.setName("input").setDescription("The input to echo back")
+      option.setName("input").setDescription("Valeur à renvoyer").setDescriptionLocalizations({ fr: "Valeur à renvoyer" })
     ),
+
   async execute(interaction) {
     const value = interaction.options.getString("input");
-    if (value) return interaction.reply(`The options value is: \`${value}\``);
-    return interaction.reply("No option was provided!");
+    await interaction.reply({ content: value ? `📝 ${value}` : "Aucune valeur fournie.", ephemeral: true });
   },
 };
