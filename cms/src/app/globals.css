@@ -233,7 +233,11 @@ kbd {
 
 .palette-backdrop {
   position: fixed;
-  inset: 0;
+  top: var(--vv-top, 0px);
+  right: 0;
+  bottom: auto;
+  left: 0;
+  height: var(--vv-height, 100vh);
   z-index: 1000;
   display: flex;
   justify-content: center;
@@ -249,7 +253,7 @@ kbd {
 .palette {
   width: min(640px, 100%);
   max-height: 70vh;
-  max-height: min(70vh, calc(100dvh - 2rem));
+  max-height: min(70vh, calc(var(--vv-height, 100vh) - 2rem));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1047,6 +1051,21 @@ footer p {
 }
 
 @media (max-width: 720px) {
+  .navbar-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .search-trigger {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .search-hero .search-form.large {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .hero {
     grid-template-columns: 1fr;
     align-items: start;
@@ -1067,7 +1086,7 @@ footer p {
   }
 
   .palette {
-    max-height: calc(100dvh - 1.5rem);
+    max-height: calc(var(--vv-height, 100vh) - 1.5rem);
   }
 
   .palette-group {

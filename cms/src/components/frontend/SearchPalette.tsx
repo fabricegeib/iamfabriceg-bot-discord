@@ -11,6 +11,8 @@ import { useDebounce } from '@/utilities/useDebounce'
 export function SearchPalette({ items }: { items: PaletteItem[] }) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
+  const backdropRef = useRef<HTMLDivElement>(null)
+  const openedAtRef = useRef(0)
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
@@ -24,6 +26,11 @@ export function SearchPalette({ items }: { items: PaletteItem[] }) {
     setActive(0)
   }, [])
 
+  const openPalette = useCallback(() => {
+    openedAtRef.current = Date.now()
+    setOpen(true)
+  }, [])
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
@@ -32,27 +39,40 @@ export function SearchPalette({ items }: { items: PaletteItem[] }) {
 
       if (((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') || (event.key === '/' && !typing)) {
         event.preventDefault()
-        setOpen(true)
+        openPalette()
         return
       }
       if (event.key === 'Escape') closePalette()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [closePalette])
+  }, [closePalette, openPalette])
 
-  // Focus synchronously after the modal mounts so mobile browsers open the keyboard.
+  // On iOS, focus() must run inside the tap gesture for the keyboard to open.
   useLayoutEffect(() => {
-    if (open) inputRef.current?.focus()
+    if (open) inputRef.current?.focus({ preventScroll: true })
   }, [open])
 
-  // Prevent the page behind the modal from scrolling on touch devices.
+  // iOS keeps fixed elements on the layout viewport when the keyboard shrinks the
+  // visual viewport: pin the modal to the visible area instead.
   useEffect(() => {
     if (!open) return
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const viewport = window.visualViewport
+    if (!viewport) return
+
+    const sync = () => {
+      const backdrop = backdropRef.current
+      if (!backdrop) return
+      backdrop.style.setProperty('--vv-top', `${viewport.offsetTop}px`)
+      backdrop.style.setProperty('--vv-height', `${viewport.height}px`)
+    }
+
+    sync()
+    viewport.addEventListener('resize', sync)
+    viewport.addEventListener('scroll', sync)
     return () => {
-      document.body.style.overflow = previous
+      viewport.removeEventListener('resize', sync)
+      viewport.removeEventListener('scroll', sync)
     }
   }, [open])
 
@@ -63,7 +83,13 @@ export function SearchPalette({ items }: { items: PaletteItem[] }) {
 
   return (
     <>
-      <button className="search-trigger" type="button" onClick={() => setOpen(true)} aria-label="Rechercher">
+      <button
+        className="search-trigger"
+        type="button"
+        onClick={openPalette}
+        onTouchStart={openPalette}
+        aria-label="Rechercher"
+      >
         <svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16">
           <path
             d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"
@@ -80,9 +106,13 @@ export function SearchPalette({ items }: { items: PaletteItem[] }) {
       {open
         ? createPortal(
             <div
+              ref={backdropRef}
               className="palette-backdrop"
               onClick={(event) => {
-                if (event.target === event.currentTarget) closePalette()
+                // Ignore the synthetic click that follows the tap which opened the modal.
+                if (event.target === event.currentTarget && Date.now() - openedAtRef.current > 350) {
+                  closePalette()
+                }
               }}
             >
               <div
