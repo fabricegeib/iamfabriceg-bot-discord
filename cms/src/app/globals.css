@@ -199,24 +199,6 @@ kbd {
   margin-left: auto;
 }
 
-.admin-link {
-  flex-shrink: 0;
-  padding: 0.4rem 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  background: var(--second-bg-color);
-  color: var(--main-color);
-  font-size: 0.82rem;
-  font-weight: 500;
-  text-decoration: none;
-  transition: border-color 150ms ease, color 150ms ease;
-}
-
-.admin-link:hover {
-  border-color: var(--gold-color);
-  color: var(--gold-color);
-}
-
 .version-badge {
   padding: 0.1rem 0.45rem;
   border: 1px solid rgba(197, 174, 106, 0.45);
@@ -252,17 +234,22 @@ kbd {
 .palette-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 30;
+  z-index: 1000;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   padding: 12vh 1rem 1rem;
+  padding-top: max(env(safe-area-inset-top), 12vh);
+  padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: rgba(18, 19, 26, 0.8);
 }
 
 .palette {
   width: min(640px, 100%);
   max-height: 70vh;
+  max-height: min(70vh, calc(100dvh - 2rem));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -290,9 +277,12 @@ kbd {
 }
 
 .palette-results {
+  flex: 1 1 auto;
+  min-height: 0;
   margin: 0;
   padding: 0.5rem;
   overflow-y: auto;
+  overscroll-behavior: contain;
   list-style: none;
 }
 
@@ -419,10 +409,6 @@ kbd {
   align-items: center;
   gap: 1rem;
   margin: 1rem 0 0;
-}
-
-.toolbar .search-form {
-  flex: 1 1 320px;
 }
 
 .filter-chips {
@@ -1076,8 +1062,12 @@ footer p {
     gap: 0;
   }
 
-  .toolbar .search-form {
-    width: 100%;
+  .palette-backdrop {
+    padding: calc(env(safe-area-inset-top) + 0.75rem) 0.75rem calc(env(safe-area-inset-bottom) + 0.75rem);
+  }
+
+  .palette {
+    max-height: calc(100dvh - 1.5rem);
   }
 
   .palette-group {

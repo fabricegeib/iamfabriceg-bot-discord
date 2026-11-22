@@ -160,7 +160,6 @@ export default async function HomePage() {
         </nav>
         <div className="navbar-actions">
           <SearchPalette items={searchIndex} />
-          <Link className="admin-link" href="/admin">Administration →</Link>
         </div>
       </header>
 
@@ -192,7 +191,6 @@ export default async function HomePage() {
                 </a>
               ) : null}
               <Link className="button" href="/api/bot/summary">API JSON</Link>
-              <Link className="button" href="/search">Recherche avancée</Link>
               {socialLinks.map((link: Doc, index: number) => (
                 <a key={`${link.label}-${index}`} className="button" href={String(link.url)} rel="noreferrer">
                   {text(link.label, 'Lien')}
@@ -295,7 +293,7 @@ export default async function HomePage() {
           {commands.length === 0 ? <p className="empty">Aucune commande active.</p> : null}
         </section>
 
-        <section id="news" aria-labelledby="news-title">
+        <section id="news" data-kind="news" aria-labelledby="news-title">
           <div className="section-heading">
             <h2 id="news-title">Actualités</h2>
             <span className="count">{news.length}</span>

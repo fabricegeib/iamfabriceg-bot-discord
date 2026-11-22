@@ -1,7 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { searchItems, sourceLabels, type PaletteItem } from '@/utilities/searchItems'
 import { useDebounce } from '@/utilities/useDebounce'
@@ -40,8 +41,19 @@ export function SearchPalette({ items }: { items: PaletteItem[] }) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [closePalette])
 
+  // Focus synchronously after the modal mounts so mobile browsers open the keyboard.
+  useLayoutEffect(() => {
+    if (open) inputRef.current?.focus()
+  }, [open])
+
+  // Prevent the page behind the modal from scrolling on touch devices.
   useEffect(() => {
-    if (open) window.setTimeout(() => inputRef.current?.focus(), 0)
+    if (!open) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
   }, [open])
 
   const go = (item: PaletteItem) => {
@@ -65,74 +77,82 @@ export function SearchPalette({ items }: { items: PaletteItem[] }) {
         <kbd>/</kbd>
       </button>
 
-      {open ? (
-        <div className="palette-backdrop" onMouseDown={closePalette}>
-          <div
-            className="palette"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Recherche dans le site"
-            onMouseDown={(event) => event.stopPropagation()}
-            onKeyDown={(event) => {
-              if (event.key === 'ArrowDown') {
-                event.preventDefault()
-                setActive((value) => Math.min(value + 1, results.length - 1))
-              } else if (event.key === 'ArrowUp') {
-                event.preventDefault()
-                setActive((value) => Math.max(value - 1, 0))
-              } else if (event.key === 'Enter' && results[active]) {
-                event.preventDefault()
-                go(results[active]!)
-              }
-            }}
-          >
-            <div className="palette-input">
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={(event) => {
-                  setQuery(event.target.value)
-                  setActive(0)
+      {open
+        ? createPortal(
+            <div
+              className="palette-backdrop"
+              onClick={(event) => {
+                if (event.target === event.currentTarget) closePalette()
+              }}
+            >
+              <div
+                className="palette"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Recherche dans le site"
+                onKeyDown={(event) => {
+                  if (event.key === 'ArrowDown') {
+                    event.preventDefault()
+                    setActive((value) => Math.min(value + 1, results.length - 1))
+                  } else if (event.key === 'ArrowUp') {
+                    event.preventDefault()
+                    setActive((value) => Math.max(value - 1, 0))
+                  } else if (event.key === 'Enter' && results[active]) {
+                    event.preventDefault()
+                    go(results[active]!)
+                  }
                 }}
-                placeholder="Rechercher une commande, un jeu, une page…"
-                aria-label="Votre recherche"
-              />
-              <kbd>Échap</kbd>
-            </div>
-            <ul className="palette-results">
-              {results.length ? (
-                results.map((item, index) => (
-                  <li key={`${item.source}-${item.label}-${index}`}>
-                    <button
-                      type="button"
-                      className={index === active ? 'palette-result active' : 'palette-result'}
-                      onMouseEnter={() => setActive(index)}
-                      onClick={() => go(item)}
-                    >
-                      <span className="palette-kind">{sourceLabels[item.source]}</span>
-                      <span className="palette-text">
-                        <strong>{item.label}</strong>
-                        {item.description ? <small>{item.description}</small> : null}
-                      </span>
-                      <span className="palette-group">{item.group}</span>
-                    </button>
-                  </li>
-                ))
-              ) : (
-                <li className="palette-empty">Aucun résultat pour « {debounced} ».</li>
-              )}
-            </ul>
-            <div className="palette-footer">
-              <span>
-                <kbd>↑</kbd> <kbd>↓</kbd> naviguer · <kbd>↵</kbd> ouvrir
-              </span>
-              <a href={`/search?q=${encodeURIComponent(debounced)}`} onClick={closePalette}>
-                Tous les résultats →
-              </a>
-            </div>
-          </div>
-        </div>
-      ) : null}
+              >
+                <div className="palette-input">
+                  <input
+                    ref={inputRef}
+                    autoFocus
+                    value={query}
+                    onChange={(event) => {
+                      setQuery(event.target.value)
+                      setActive(0)
+                    }}
+                    placeholder="Rechercher une commande, un jeu, une page…"
+                    aria-label="Votre recherche"
+                  />
+                  <kbd>Échap</kbd>
+                </div>
+                <ul className="palette-results">
+                  {results.length ? (
+                    results.map((item, index) => (
+                      <li key={`${item.source}-${item.label}-${index}`}>
+                        <button
+                          type="button"
+                          className={index === active ? 'palette-result active' : 'palette-result'}
+                          onMouseEnter={() => setActive(index)}
+                          onClick={() => go(item)}
+                        >
+                          <span className="palette-kind">{sourceLabels[item.source]}</span>
+                          <span className="palette-text">
+                            <strong>{item.label}</strong>
+                            {item.description ? <small>{item.description}</small> : null}
+                          </span>
+                          <span className="palette-group">{item.group}</span>
+                        </button>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="palette-empty">Aucun résultat pour « {debounced} ».</li>
+                  )}
+                </ul>
+                <div className="palette-footer">
+                  <span>
+                    <kbd>↑</kbd> <kbd>↓</kbd> naviguer · <kbd>↵</kbd> ouvrir
+                  </span>
+                  <a href={`/search?q=${encodeURIComponent(debounced)}`} onClick={closePalette}>
+                    Tous les résultats →
+                  </a>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   )
 }

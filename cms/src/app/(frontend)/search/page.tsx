@@ -53,7 +53,6 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
             <li><Link className="nav-link" href="/#api">API</Link></li>
           </ul>
         </nav>
-        <div className="navbar-actions"><Link className="admin-link" href="/admin">Administration →</Link></div>
       </header>
 
       <div className="container">

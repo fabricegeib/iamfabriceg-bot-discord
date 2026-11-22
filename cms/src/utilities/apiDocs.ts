@@ -62,7 +62,7 @@ export const apiDocs: ApiDoc[] = [
     method: 'POST',
     path: '/api/bot/usage',
     label: 'Enregistrer une interaction',
-    description: 'Reçu via `x-webhook-secret` : met à jour usages, profils et compteurs.',
+    description: 'Clé API (`Authorization: users API-Key …`) requise : met à jour usages, profils et compteurs.',
     public: false,
     group: 'Bot ↔ CMS',
   },

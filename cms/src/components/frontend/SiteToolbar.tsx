@@ -2,15 +2,17 @@
 
 import { useEffect, useState } from 'react'
 
-type Filter = 'all' | 'games' | 'commands'
+type Filter = 'all' | 'games' | 'commands' | 'news' | 'api'
 
 const FILTERS: Array<{ value: Filter; label: string }> = [
   { value: 'all', label: 'Tout' },
   { value: 'games', label: 'Jeux' },
   { value: 'commands', label: 'Commandes' },
+  { value: 'news', label: 'Actualités' },
+  { value: 'api', label: 'API' },
 ]
 
-/** Filtres des sections + recherche dédiée (formulaire GET, sans JavaScript requis). */
+/** Filtres des sections : chaque bouton affiche/masque les blocs `data-kind` correspondants. */
 export function SiteToolbar() {
   const [filter, setFilter] = useState<Filter>('all')
 
@@ -35,11 +37,6 @@ export function SiteToolbar() {
           </button>
         ))}
       </div>
-      <form className="search-form" action="/search" method="get">
-        <input type="hidden" name="type" value={filter === 'all' ? '' : filter} />
-        <input type="search" name="q" placeholder="Rechercher dans les commandes et les jeux…" aria-label="Rechercher" />
-        <button type="submit">Rechercher</button>
-      </form>
     </div>
   )
 }

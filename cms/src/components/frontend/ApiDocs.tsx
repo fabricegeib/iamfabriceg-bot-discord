@@ -15,7 +15,7 @@ export function ApiDocs() {
   const groups = [...new Set(apiDocs.map((doc) => doc.group))]
 
   return (
-    <section id="api" aria-labelledby="api-title">
+    <section id="api" data-kind="api" aria-labelledby="api-title">
       <div className="section-heading">
         <h2 id="api-title">API Payload</h2>
         <span className="count">{apiDocs.length}</span>

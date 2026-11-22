@@ -4,7 +4,7 @@ const { createLogger } = require("./logger");
 
 const log = createLogger("http");
 
-const DEFAULT_USER_AGENT = "iamfabriceg-bot-discord/1.0 (+https://github.com/fabricegeib/iamfabriceg-bot-discord)";
+const DEFAULT_USER_AGENT = "iamfabriceg-bot-discord/1.1.0 (+https://github.com/fabricegeib/iamfabriceg-bot-discord)";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
