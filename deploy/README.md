@@ -3,6 +3,10 @@
 **Rien à modifier avant le transfert.** Le `.env` contient déjà les secrets Discord/Payload,
 l’URI MongoDB **encodée** (`!` → `%21`) et `authSource=admin`. Ne pas le partager, ne pas le committer.
 
+> ⚠️ Ne remplace pas l’hôte `51.178.39.128` par `mongodb` dans `DATABASE_URI` : le conteneur MongoDB
+> n’est pas sur le réseau `nginx-proxy-manager`, ce nom ne se résout donc pas depuis le CMS.
+> Le nom `mongodb` ne concerne que l’option `--network container:mongodb` de l’import.
+
 ## 1. Transfert (depuis ta machine)
 
 ```bash

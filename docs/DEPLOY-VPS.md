@@ -29,6 +29,11 @@ Ouvre `deploy/.env` et remplace **uniquement** les deux placeholders de la ligne
 DATABASE_URI=mongodb://MONGO_USER:MONGO_PASSWORD@51.178.39.128:27017/iamfabriceg_bot?authSource=admin
 ```
 
+> ⚠️ **Garde l’hôte `51.178.39.128` dans `DATABASE_URI`.** Ne le remplace pas par `mongodb` :
+> ton conteneur MongoDB n’est pas sur le réseau `nginx-proxy-manager` de la stack, donc ce nom
+> ne se résout pas depuis le bot/CMS. Le nom `mongodb` ne sert que dans `--network container:mongodb`
+> des commandes d’import/test ci-dessous, où le conteneur jetable partage son namespace réseau.
+
 - Garde `?authSource=admin` : c’est la base d’authentification de ton instance.
 - Garde `/iamfabriceg_bot` : c’est la base dédiée au bot (les autres bases du VPS ne sont pas touchées).
 - **Encode les caractères spéciaux** du mot de passe dans une URL : `@` → `%40`, `#` → `%23`,
