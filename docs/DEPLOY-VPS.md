@@ -1,7 +1,8 @@
 # Déploiement VPS — iamfabriceg Bot 1.1.0
 
-> Procédure courte en 6 étapes. Dernière vérification : **2026-11-22**, commit `58a32e0`.
-> Le dossier [`deploy/`](../deploy) contient les fichiers prêts à copier sur le VPS.
+> Procédure courte en 6 étapes. **Aucun conteneur MongoDB n’est lancé** : la stack utilise la
+> MongoDB déjà présente sur le VPS. Le dossier [`deploy/`](../deploy) contient les fichiers
+> prêts à copier.
 
 ---
 
@@ -12,37 +13,52 @@
   `nginx-proxy-manager` (c’est le réseau par défaut de la plupart des installs NPM).
 - Le domaine `bot.iamfabriceg.xyz` avec un enregistrement **A** vers l’IP du VPS.
 - Les identifiants du registre privé `registry.fabricegeib.com`.
-- Le dossier `deploy/` et l’archive MongoDB `backups/iamfabriceg-bot-2026-11-22.archive.gz`.
+- Les identifiants de ta **MongoDB existante** (`mongodb://xxx:xxx@51.178.39.128:27017/?authSource=admin`).
+- L’archive MongoDB `backups/iamfabriceg-bot-2026-11-22.archive.gz`.
 
-Rien d’autre : pas de code source, pas de pnpm, pas de build sur le VPS. Les images sont
-déjà publiées.
+Rien d’autre : pas de code source, pas de pnpm, pas de build sur le VPS, pas de nouveau MongoDB.
 
 ---
 
-## 1. Copier les fichiers sur le VPS
+## 1. Remplir les identifiants MongoDB (sur ta machine)
 
-Depuis ta machine (remplace `USER` et `IP_VPS`) :
+Ouvre `deploy/.env` et remplace **uniquement** les deux placeholders de la ligne `DATABASE_URI` :
+
+```dotenv
+DATABASE_URI=mongodb://MONGO_USER:MONGO_PASSWORD@51.178.39.128:27017/iamfabriceg_bot?authSource=admin
+```
+
+- Garde `?authSource=admin` : c’est la base d’authentification de ton instance.
+- Garde `/iamfabriceg_bot` : c’est la base dédiée au bot (les autres bases du VPS ne sont pas touchées).
+- **Encode les caractères spéciaux** du mot de passe dans une URL : `@` → `%40`, `#` → `%23`,
+  `/` → `%2F`, `:` → `%3A`, `%` → `%25`.
+- Le fichier `.env` est ignoré par Git : ne le commite pas, ne le colle pas dans un ticket.
+
+---
+
+## 2. Copier les fichiers sur le VPS
+
+Depuis ta machine :
 
 ```powershell
-ssh USER@IP_VPS 'mkdir -p ~/docker/iamfabriceg-bot'
-scp -r deploy/. USER@IP_VPS:~/docker/iamfabriceg-bot/
-scp backups/iamfabriceg-bot-2026-11-22.archive.gz USER@IP_VPS:~/docker/iamfabriceg-bot/
+ssh debian@51.178.39.128 'mkdir -p ~/docker/iamfabriceg-bot'
+scp -r deploy/. debian@51.178.39.128:~/docker/iamfabriceg-bot/
+scp backups/iamfabriceg-bot-2026-11-22.archive.gz debian@51.178.39.128:~/docker/iamfabriceg-bot/
 ```
 
 Puis, sur le VPS :
 
 ```bash
 cd ~/docker/iamfabriceg-bot
-ls -la            # docker-compose.yml, .env, .env.example, README.md, archive .gz
+ls -la     # docker-compose.yml, .env, .env.example, README.md, archive .gz
 ```
 
-Le `.env` fourni est **déjà rempli** avec les mêmes secrets que ta machine locale et les
-valeurs internes au Docker (`PAYLOAD_URL=http://cms:3001`, `DATABASE_URI=mongodb://mongo:27017/…`).
-Si tu changes de domaine, modifie **une seule ligne** : `DEPLOY_URL`.
+Le `.env` fourni contient déjà tes secrets Discord/Payload et `DEPLOY_URL=https://bot.iamfabriceg.xyz`.
+Si tu changes de domaine, modifie `DEPLOY_URL` (une ligne).
 
 ---
 
-## 2. Préparer le VPS (une seule fois)
+## 3. Préparer le VPS (une seule fois)
 
 ```bash
 # Le réseau doit exister : NPM le crée normalement lui-même.
@@ -53,70 +69,85 @@ docker network create nginx-proxy-manager
 
 # Connexion au registre privé :
 docker login registry.fabricegeib.com
+
+# Tester l'accès à la MongoDB existante avant de lancer la stack :
+docker run --rm --env-file .env mongo:8 sh -c \
+  'mongosh "$DATABASE_URI" --quiet --eval "printjson(db.adminCommand({ping:1}))"'
 ```
 
-> Le `docker-compose.yml` déclare `default` comme réseau **externe** nommé
-> `nginx-proxy-manager`. Toute la stack (mongo, bot, CMS) rejoint donc le réseau de NPM :
-> c’est ce qui permet à NPM de résoudre `cms:3001`. MongoDB n’a aucun port public.
+> Si ce test échoue avec `ECONNREFUSED` : ta MongoDB écoute peut-être seulement sur l’interface
+> locale. Depuis le VPS, teste alors avec l’hôte du VPS et le réseau de l’hôte :
+>
+> ```bash
+> docker run --rm --network host --env-file .env mongo:8 sh -c \
+>   'mongosh "${DATABASE_URI/51.178.39.128/127.0.0.1}" --quiet --eval "printjson(db.adminCommand({ping:1}))"'
+> ```
+>
+> Si ce variant fonctionne, remplace `51.178.39.128` par `127.0.0.1` dans le `DATABASE_URI`
+> du `.env` sur le VPS, puis recrée les conteneurs (étape 6).
 
 ---
 
-## 3. Lancer la stack
+## 4. Lancer la stack
 
 ```bash
 docker compose up -d
 docker compose ps
 ```
 
-Attends que les trois conteneurs soient `healthy` (~30 s). Si une image manque, elle est
-tirée automatiquement du registre (`pull_policy: if_not_present`).
+**Deux conteneurs seulement** : `iamfabriceg-bot-discord` et `iamfabriceg-bot-cms`, tous deux
+`healthy` en ~30 s. Il n’y a volontairement **aucun** `iamfabriceg-bot-mongo`, aucun volume
+MongoDB et aucun service `cms-seed`. Les images sont tirées du registre si besoin
+(`pull_policy: if_not_present`).
 
-À ce stade MongoDB est vide : c’est normal, c’est l’étape 4 qui le remplit.
+À ce stade la base importée n’est pas encore restaurée : c’est l’étape 5.
 
 ---
 
-## 4. Importer la base MongoDB
+## 5. Importer la base MongoDB
 
 ```bash
-# Vérifier l'archive (empreinte attendue ci-dessous)
+# Vérifier l'archive (empreinte attendue)
 sha256sum iamfabriceg-bot-2026-11-22.archive.gz
 # 390180301D0CFE0027009CFF388D2DA57B18160F5B60D1F24E4466A49F7EFA1F
 
-# Copier l'archive dans le conteneur MongoDB, puis restaurer
-docker cp iamfabriceg-bot-2026-11-22.archive.gz \
-  iamfabriceg-bot-mongo:/tmp/iamfabriceg-bot.archive.gz
-
-docker exec iamfabriceg-bot-mongo mongorestore \
-  --uri="mongodb://127.0.0.1:27017/iamfabriceg_bot" \
-  --archive=/tmp/iamfabriceg-bot.archive.gz \
-  --gzip --drop
+# Restaurer dans la MongoDB existante, via un conteneur jetable :
+docker run --rm \
+  --env-file .env \
+  -v "$PWD/iamfabriceg-bot-2026-11-22.archive.gz:/backup/archive.gz:ro" \
+  mongo:8 sh -c \
+  'mongorestore --uri="$DATABASE_URI" --archive=/backup/archive.gz --gzip --drop'
 
 # Contrôle rapide
-docker exec iamfabriceg-bot-mongo mongosh --quiet --eval \
-  'const d=db.getSiblingDB("iamfabriceg_bot"); printjson({collections:d.getCollectionNames().length, users:d.users.countDocuments({}), games:d.games.countDocuments({})})'
+docker run --rm --env-file .env mongo:8 sh -c \
+  'mongosh "$DATABASE_URI" --quiet --eval "printjson({collections:db.getCollectionNames().length, users:db.users.countDocuments({}), games:db.games.countDocuments({})})"'
 ```
 
-> ⚠️ **Ne jamais lancer le seed après l’import** : il régénérerait `PAYLOAD_API_KEY` et le bot
-> ne pourrait plus s’authentifier. Le Compose de `deploy/` ne contient volontairement aucun
-> service `cms-seed`.
+> ⚠️ `--drop` **remplace les collections de la base `iamfabriceg_bot` uniquement**. Vérifie que
+> c’est bien une base dédiée. Les autres bases de ta MongoDB ne sont pas modifiées.
+>
+> ⚠️ **Ne jamais lancer le seed après l’import** : il régénérerait `PAYLOAD_API_KEY` et le bot ne
+> pourrait plus s’authentifier. Le Compose de `deploy/` ne contient aucun service `cms-seed`.
 
 ---
 
-## 5. Redémarrer bot et CMS (purge des caches)
+## 6. Purger les caches du bot et du CMS
 
-Ils ont démarré sur une base vide à l’étape 3 : on les redémarre après l’import pour qu’ils
-rechargent les données restaurées.
+Ils ont démarré avant la restauration : on les redémarre pour qu’ils rechargent les données.
 
 ```bash
 docker compose restart bot cms
 docker compose ps
 ```
 
+> Toute modification de `.env` (MongoDB, domaine, clé API, secrets) impose :
+> `docker compose up -d --force-recreate bot cms`.
+
 ---
 
-## 6. Nginx Proxy Manager — à la main (interface web)
+## 7. Nginx Proxy Manager — à la main (interface web)
 
-Ouvre l’interface de NPM → **Proxy Hosts** → **Add Proxy Host**, onglet **Details** :
+Ouvre NPM → **Proxy Hosts** → **Add Proxy Host**, onglet **Details** :
 
 | Champ | Valeur |
 |---|---|
@@ -140,16 +171,17 @@ Onglet **SSL** :
 
 **Save.** Attends la délivrance du certificat (quelques secondes).
 
-> NPM et la stack partagent le réseau `nginx-proxy-manager` : le nom `cms` est résolu par
-> Docker, aucune IP n’est à renseigner.
+> NPM et la stack partagent le réseau `nginx-proxy-manager` : le nom `cms` est résolu par Docker,
+> aucune IP n’est à renseigner.
 
 ---
 
-## 7. Vérifications finales
+## 8. Vérifications finales
 
 Depuis le VPS :
 
 ```bash
+docker compose ps
 curl -fsS http://127.0.0.1:3001/api/bot/healthz
 curl -fsS http://127.0.0.1:3012/healthz
 ```
@@ -165,18 +197,17 @@ curl -fsS -o /dev/null -w 'front  HTTP %{http_code}\n' https://bot.iamfabriceg.x
 Depuis un navigateur :
 
 - `/` : le front avec les filtres **Tout / Jeux / Commandes / Actualités / API**.
-- `/admin` : connexion avec le compte du seed (`bot@iamfabriceg.local` et le mot de passe
-  utilisé lors du seed local). **Change ce mot de passe immédiatement**, crée ton propre compte
-  `admin` et conserve le compte `bot` qui porte la clé API (voir
-  [`docs/CMS.md`](./CMS.md#compte-admin-personnel-et-liaison-discord)).
-- Sur iPhone : la palette doit s’ouvrir **au premier tap** et le champ occuper toute la largeur.
-  Le correctif est bien présent dans les images `1.1.0-slim` (commit `7f135f6`).
-- Sur Discord : `/ping` doit répondre, et `/profil pseudo:TonPseudo` doit créer ton profil
-  visible dans `/admin` → **Profiles**.
+- `/admin` : connexion avec `bot@iamfabriceg.local`, puis change le mot de passe, crée ton propre
+  compte `admin` et **garde le compte `bot`** (il porte `PAYLOAD_API_KEY`). Voir
+  [`docs/CMS.md`](./CMS.md#compte-admin-personnel-et-liaison-discord).
+- Sur iPhone : la palette s’ouvre **au premier tap**, est focalisée, occupe toute la largeur et
+  affiche 8 résultats. Le correctif est dans les images `1.1.0-slim` (commit `7f135f6`).
+- Sur Discord : `/ping` répond et `/profil pseudo:TonPseudo` crée un profil visible dans
+  `/admin` → **Profiles**.
 
 ---
 
-## 8. Mise à jour et retour arrière
+## 9. Mise à jour et retour arrière
 
 Modifier le tag des deux images dans `deploy/docker-compose.yml`, puis :
 
@@ -185,8 +216,7 @@ docker compose pull
 docker compose up -d
 ```
 
-Retour arrière : remettre `1.1.0` (ancienne image non optimisée, conservée dans le registre)
-à la place de `1.1.0-slim`, puis relancer les deux commandes ci-dessus.
+Retour arrière : remettre `1.1.0` à la place de `1.1.0-slim`, puis relancer les deux commandes.
 
 | Image | Tag courant | Digest |
 |---|---|---|
@@ -195,34 +225,30 @@ Retour arrière : remettre `1.1.0` (ancienne image non optimisée, conservée da
 | Bot | `1.1.0` (rollback, 235 Mo) | `sha256:7cb5bb8bcd47559f653b5c938b9abe80e49f29e55af38701cd2248a0d6a489f4` |
 | CMS | `1.1.0` (rollback, 2,41 Go) | `sha256:b181c774b5e77b4cdd452109aa52b04dcf53d54a94e5530d78dc94aedc08e135` |
 
-> Les images `1.1.0-slim` résultent de l’optimisation Next.js `standalone` : `/app` passe de
->1,3 Go à 128,6 Mo, le CMS de 2,41 Go à 306 Mo (−87 %) et le bot de 235 à 203 Mo. Aucun pnpm,
->aucune source TypeScript ni cache Next dans le runtime ; le seed y est compilé en
->`cms/seed.mjs`.
-
 ---
 
-## 9. Dépannage express
+## 10. Dépannage express
 
 | Symptôme | Correctif |
 |---|---|
+| `Authentication failed` sur MongoDB | Vérifier identifiants, `authSource=admin` et encodage des caractères spéciaux, puis `up -d --force-recreate bot cms` |
+| `ECONNREFUSED 51.178.39.128:27017` | MongoDB écoute sur `127.0.0.1` : voir le test de l’étape 3, puis remplacer l’hôte dans `DATABASE_URI` |
 | `unauthorized: authentication required` au `pull` | `docker login registry.fabricegeib.com` |
 | `network nginx-proxy-manager not found` | `docker network create nginx-proxy-manager` |
 | 502 dans NPM | Vérifier `Forward Hostname = cms` et `Port = 3001`, puis reload du Proxy Host |
 | Admin : spinner infini sur les POST | `DEPLOY_URL` doit être l’URL publique HTTPS ; `docker compose up -d --force-recreate cms` |
-| Bot « non configuré » pour une API | Clé absente du `.env` ou conteneur non recréé ; compléter puis `up -d --force-recreate bot` |
-| Stats vides | Import MongoDB manquant : rejouer l’étape 4 puis `restart bot cms` |
+| Bot « non configuré » pour une API | Clé absente du `.env` ; compléter puis `up -d --force-recreate bot` |
+| Stats vides | Import MongoDB manquant : rejouer l’étape 5 puis `restart bot cms` |
 | Palette au 2ᵉ tap sur iPhone | Vérifier le digest CMS `ca7c312e…` (`1.1.0-slim`) |
 | Cercles rouges / safe areas | Retirer puis rajouter la web app depuis l’écran d’accueil iOS |
 
 ---
 
-## 10. Rappels importants
+## 11. Rappels importants
 
 - Le `.env` contient les secrets : ne jamais le committer ni le coller dans un ticket.
-- `RIOT_API_KEY` reste **vide** en prod tant qu’une Production API Key n’est pas approuvée
-  (une clé dev expire en 24 h).
-- Twitch : l’OAuth Redirect `http://localhost` suffit ; le callback EventSub public est
+- `RIOT_API_KEY` reste **vide** en prod tant qu’une Production API Key n’est pas approuvée.
+- Twitch : OAuth Redirect `http://localhost` suffit ; callback EventSub public :
   `https://bot.iamfabriceg.xyz/webhooks/twitch`.
 - Ne pas relancer `cms-seed` après l’import MongoDB.
-- Changer le mot de passe admin au premier login.
+- Changer le mot de passe admin au premier login et conserver le compte `bot`.

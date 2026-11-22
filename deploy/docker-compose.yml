@@ -3,31 +3,19 @@ name: iamfabriceg-bot
 # ============================================================================
 # PRODUCTION — copier ce dossier tel quel sur le VPS, puis :
 #   docker compose up -d
+#
+# MongoDB N'EST PAS dans cette stack : elle existe déjà sur le VPS.
+# Renseigner DATABASE_URI dans .env (MONGO_USER / MONGO_PASSWORD) AVANT le scp.
 # Le réseau `nginx-proxy-manager` doit déjà exister (créé par NPM).
-# Domaine : modifier DEPLOY_URL dans le .env si besoin (une seule ligne).
+# Domaine public : modifier DEPLOY_URL dans .env si besoin.
 # ============================================================================
 
 services:
-  mongo:
-    image: mongo:8
-    container_name: iamfabriceg-bot-mongo
-    restart: unless-stopped
-    volumes:
-      - iamfabriceg-bot-mongo-data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
   bot:
     image: registry.fabricegeib.com/iamfabriceg-bot:1.1.0-slim
     pull_policy: if_not_present
     container_name: iamfabriceg-bot-discord
     depends_on:
-      mongo:
-        condition: service_healthy
       cms:
         condition: service_healthy
     env_file:
@@ -35,7 +23,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
-      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
+      # DATABASE_URI vient du .env : MongoDB externe, aucune surcharge ici.
       PAYLOAD_URL: http://cms:3001
       PAYLOAD_PUBLIC_URL: ${DEPLOY_URL:-https://bot.iamfabriceg.xyz}
       # Callback public Twitch EventSub : DEPLOY_URL/webhooks/twitch
@@ -56,16 +44,13 @@ services:
     image: registry.fabricegeib.com/iamfabriceg-bot-cms:1.1.0-slim
     pull_policy: if_not_present
     container_name: iamfabriceg-bot-cms
-    depends_on:
-      mongo:
-        condition: service_healthy
     env_file:
       - .env
     environment:
       NODE_ENV: production
       PORT: "3001"
       CMS_PORT: "3001"
-      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
+      # DATABASE_URI vient du .env : MongoDB externe, aucune surcharge ici.
       PAYLOAD_URL: http://cms:3001
       PAYLOAD_PUBLIC_URL: ${DEPLOY_URL:-https://bot.iamfabriceg.xyz}
       PUBLIC_URL: ${DEPLOY_URL:-https://bot.iamfabriceg.xyz}
@@ -80,15 +65,13 @@ services:
       start_period: 40s
     restart: unless-stopped
 
-# VOLONTAIREMENT ABSENT : le service `cms-seed`. La base MongoDB importée
-# contient déjà l'utilisateur admin et PAYLOAD_API_KEY. Relancer le seed
-# après l'import régénérerait la clé API et casserait le bot.
-
-volumes:
-  iamfabriceg-bot-mongo-data:
+# VOLONTAIREMENT ABSENTS :
+#   - `mongo` : la MongoDB déjà installée sur le VPS est utilisée via DATABASE_URI.
+#   - `cms-seed` : la base importée contient déjà l'utilisateur admin et
+#     PAYLOAD_API_KEY. Relancer le seed casserait l'authentification du bot.
 
 # La stack rejoint le réseau de Nginx Proxy Manager : NPM résout `cms:3001`.
-# MongoDB n'a aucun port public ; il n'est accessible que depuis ce réseau.
+# Aucun port MongoDB n'est ouvert par cette stack.
 networks:
   default:
     external: true

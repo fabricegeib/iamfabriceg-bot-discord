@@ -98,7 +98,7 @@ redémarrage manuel du bot). Arrêt : `corepack pnpm docker:dev:down`.
 # Local : construit les images depuis les Dockerfiles
 corepack pnpm docker:prod
 
-# VPS : copier le dossier prêt à l'emploi, puis une seule commande sur le VPS
+# VPS : remplir MONGO_USER / MONGO_PASSWORD dans deploy/.env, copier, puis une commande
 ssh USER@IP_VPS 'mkdir -p ~/docker/iamfabriceg-bot'
 scp -r deploy/. USER@IP_VPS:~/docker/iamfabriceg-bot/
 # sur le VPS :
@@ -109,11 +109,13 @@ Images publiées (optimisées) : `registry.fabricegeib.com/iamfabriceg-bot:1.1.0
 203 Mo) et `registry.fabricegeib.com/iamfabriceg-bot-cms:1.1.0-slim` (CMS + admin + front,
 306 Mo), construites depuis `Dockerfile` et `cms/Dockerfile`. Digests : bot
 `sha256:ca9e4f5d…847cd1`, CMS `sha256:ca7c312e…ad179c`. L’ancien tag `1.1.0` reste publié pour
-le retour arrière. Le bot attend que le CMS et MongoDB soient `healthy`.
+le retour arrière. Le bot attend que le CMS soit `healthy` ; MongoDB est externe à la stack
+et son URI est définie dans `deploy/.env`.
 Procédure courte en 6 étapes — fichiers à copier, import MongoDB, Nginx Proxy Manager,
 vérifications et rollback : [`docs/DEPLOY-VPS.md`](./docs/DEPLOY-VPS.md). Le dossier
-[`deploy/`](./deploy) contient le Compose unique (réseau NPM intégré) et le `.env` prêt à
-l’emploi. Arrêt de la stack locale : `corepack pnpm docker:prod:down`.
+[`deploy/`](./deploy) contient le Compose unique (bot + CMS, réseau NPM intégré) et le `.env`
+à compléter avec tes identifiants MongoDB. Arrêt de la stack locale :
+`corepack pnpm docker:prod:down`.
 
 ## Administration Payload
 
