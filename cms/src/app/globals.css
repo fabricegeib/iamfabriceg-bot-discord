@@ -35,12 +35,15 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 1.5rem;
+  scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 1.5rem);
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  /* Keep the header out of iOS' translucent "Liquid Glass" status bar area. */
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background-color: var(--main-bg-color);
   background-image: radial-gradient(900px 480px at 15% -8%, rgba(98, 114, 164, 0.22), transparent 65%);
   color: var(--main-color);
@@ -231,36 +234,31 @@ kbd {
   color: var(--main-color);
 }
 
-.palette-backdrop {
+/* Native <dialog> lives in the browser's top layer: nothing can cover it,
+   whatever the z-index or stacking context. ::backdrop dims the page. */
+dialog.palette {
   position: fixed;
-  top: var(--vv-top, 0px);
+  top: calc(var(--vv-top, 0px) + max(env(safe-area-inset-top, 0px), 12vh));
   right: 0;
   bottom: auto;
   left: 0;
-  height: var(--vv-height, 100vh);
-  z-index: 1000;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 12vh 1rem 1rem;
-  padding-top: max(env(safe-area-inset-top), 12vh);
-  padding-bottom: max(env(safe-area-inset-bottom), 1rem);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  background: rgba(18, 19, 26, 0.8);
-}
-
-.palette {
-  width: min(640px, 100%);
-  max-height: 70vh;
+  width: min(640px, calc(100% - 2rem));
   max-height: min(70vh, calc(var(--vv-height, 100vh) - 2rem));
+  margin: 0 auto 1rem;
+  padding: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  overscroll-behavior: contain;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   background: var(--main-bg-color);
+  color: var(--main-color);
   box-shadow: var(--shadow);
+}
+
+dialog.palette::backdrop {
+  background: rgba(18, 19, 26, 0.8);
 }
 
 .palette-input {
@@ -1081,12 +1079,11 @@ footer p {
     gap: 0;
   }
 
-  .palette-backdrop {
-    padding: calc(env(safe-area-inset-top) + 0.75rem) 0.75rem calc(env(safe-area-inset-bottom) + 0.75rem);
-  }
-
-  .palette {
-    max-height: calc(var(--vv-height, 100vh) - 1.5rem);
+  dialog.palette {
+    top: calc(var(--vv-top, 0px) + env(safe-area-inset-top, 0px) + 0.5rem);
+    width: calc(100% - 1rem);
+    max-height: calc(var(--vv-height, 100vh) - env(safe-area-inset-top, 0px) - 1rem);
+    margin-bottom: 0.5rem;
   }
 
   .palette-group {
