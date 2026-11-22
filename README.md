@@ -35,7 +35,7 @@ corepack pnpm cms:dev         # CMS (port 3001) — dans un second terminal
 corepack pnpm send:roles
 ```
 
-MongoDB doit être accessible sur `mongodb://127.0.0.1:27017/iamfabriceg_bot` (fourni par `pnpm docker:dev`).
+MongoDB doit être accessible sur `mongodb://127.0.0.1:27020/iamfabriceg_bot` (fourni par `pnpm docker:dev`).
 
 ### Tout faire via Docker (sans pnpm local)
 
@@ -79,10 +79,14 @@ corepack pnpm docker:dev
 
 | Service | URL | Rôle |
 |---|---|---|
-| `bot` | http://localhost:3000/healthz | Bot Discord + webhooks |
+| `bot` | http://localhost:3012/healthz | Bot Discord + webhooks |
 | `cms` | http://localhost:3001/admin | Admin Payload |
 | `cms` | http://localhost:3001/ | Front public (lecture seule) |
-| `mongo` | localhost:27017 | Base MongoDB |
+| `mongo` | localhost:27020 | Base MongoDB |
+
+Les ports hôtes `27020` (Mongo) et `3012` (bot) sont utilisés pour éviter des conflits avec d'autres projets
+déjà présents sur `27017` et `3000`. Les ports internes des conteneurs restent `27017` et `3000`, donc
+`mongodb://mongo:27017/iamfabriceg_bot` et `http://bot:3000` restent inchangés.
 
 Le code est monté depuis l'hôte : les modifications sont visibles immédiatement (hot reload pour le CMS,
 redémarrage manuel du bot). Arrêt : `corepack pnpm docker:dev:down`.
@@ -115,11 +119,11 @@ Détails : [`docs/CMS.md`](./docs/CMS.md).
 Variables principales :
 
 ```env
-DATABASE_URI=mongodb://127.0.0.1:27017/iamfabriceg_bot
+DATABASE_URI=mongodb://127.0.0.1:27020/iamfabriceg_bot
 PAYLOAD_SECRET=<openssl rand -hex 32>
 PAYLOAD_URL=http://127.0.0.1:3001
 PAYLOAD_API_KEY=<générée par pnpm cms:seed>
-BOT_WEBHOOK_URL=http://127.0.0.1:3000
+BOT_WEBHOOK_URL=http://127.0.0.1:3012
 WEBHOOK_SECRET=<même valeur dans le bot et le CMS>
 ```
 

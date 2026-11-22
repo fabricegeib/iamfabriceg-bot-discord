@@ -273,7 +273,10 @@ Nouvelle PR prévue avec `build/modernisation-2026` comme base afin de préserve
 - [x] Service `cms-seed` (profil `tools`) : seed 100 % Docker, sans pnpm local
 - [x] Correction Docker : Corepack absent de Node 26 → pnpm installé via npm dans les images et le compose dev
 - [x] `/profil` sans `PAYLOAD_API_KEY` : message explicite au lieu d'un 401 opaque
-- [ ] Commit, push et création de la nouvelle PR
+- [x] Ports hôtes `27020` (Mongo) et `3012` (bot) pour éviter les conflits avec d'autres projets
+- [x] Seed réel via WSL + `PAYLOAD_API_KEY` (64 hex) écrite dans le `.env`
+- [x] Déploiement des 17 commandes sur `GUILD_ID` et envoi des 5 boutons de rôles dans `#bot-test`
+- [x] Commit, push et création de la nouvelle PR
 
 ### Résultat des validations (23/11/2026)
 
@@ -286,6 +289,9 @@ Nouvelle PR prévue avec `build/modernisation-2026` comme base afin de préserve
 - Webhook : signature HMAC vérifiée côté bot, mauvaise signature rejetée en 401
 - Seed via Docker (MongoDB isolé sur le port 37017) : exit 0, clé API 64 hex générée
 - `docker compose config` (dev + prod) revalidé après ajout de `cms-seed`
+- Stack WSL démarrée : `/healthz` bot et `/api/bot/healthz` CMS tous deux `ok`
+- Seed réel WSL : clé 64 hex générée et écrite dans `.env`
+- Discord live : 17 commandes déployées sur le serveur de test, 5 boutons de rôles envoyés dans `#bot-test`
 
 ### Commandes de validation
 

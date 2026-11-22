@@ -36,7 +36,7 @@ soit `iamfabriceg Bot` (affichage), soit `iamfabriceg-bot-` (technique).
 | `botSettings.botName` | `iamfabriceg Bot` | Valeur par défaut du global Payload |
 | `service` du `/healthz` bot | `iamfabriceg-bot` | Identifiant machine lisible |
 | Titre du front public | `iamfabriceg Bot` | Metadata Next.js |
-| URL locale bot | `http://127.0.0.1:3000` | — |
+| URL locale bot | `http://127.0.0.1:3012` | — |
 | URL locale CMS | `http://127.0.0.1:3001` | Admin `/admin`, front `/` |
 | URL Docker bot | `http://bot:3000` | Depuis le réseau Compose |
 | URL Docker CMS | `http://cms:3001` | Depuis le réseau Compose |

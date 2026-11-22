@@ -37,7 +37,7 @@ services:
       PAYLOAD_URL: http://cms:3001
       BOT_WEBHOOK_URL: http://bot:3000
     ports:
-      - "3000:3000"
+      - "3012:3000"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/healthz"]
       interval: 30s

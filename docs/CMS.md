@@ -17,7 +17,7 @@ corepack pnpm docker:dev
 | Front public | http://localhost:3001/ |
 | Endpoint santé CMS | http://localhost:3001/api/bot/healthz |
 | Endpoint résumé bot | http://localhost:3001/api/bot/summary |
-| MongoDB | mongodb://localhost:27017/iamfabriceg_bot |
+| MongoDB | mongodb://localhost:27020/iamfabriceg_bot |
 
 Premier lancement (seed via Docker, sans pnpm local) :
 
@@ -135,11 +135,11 @@ Le bot vérifie la signature avec `timingSafeEqual` et journalise l'événement.
 Voir [`.env.example`](../.env.example). Les plus importantes pour le CMS :
 
 ```env
-DATABASE_URI=mongodb://127.0.0.1:27017/iamfabriceg_bot
+DATABASE_URI=mongodb://127.0.0.1:27020/iamfabriceg_bot
 PAYLOAD_SECRET=
 PAYLOAD_URL=http://127.0.0.1:3001
 CMS_PORT=3001
-BOT_WEBHOOK_URL=http://127.0.0.1:3000
+BOT_WEBHOOK_URL=http://127.0.0.1:3012
 WEBHOOK_SECRET=
 SEED_ADMIN_PASSWORD=Admin1234!
 ```
