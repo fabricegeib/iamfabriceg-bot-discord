@@ -36,6 +36,7 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      HOSTNAME: "0.0.0.0"
       PORT: "3000"
       DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
       PAYLOAD_URL: http://cms:3001
@@ -67,6 +68,7 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      HOSTNAME: "0.0.0.0"
       PORT: "3001"
       CMS_PORT: "3001"
       DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
@@ -93,6 +95,7 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      HOSTNAME: "0.0.0.0"
       PORT: "3001"
       CMS_PORT: "3001"
       DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot

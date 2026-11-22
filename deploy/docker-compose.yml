@@ -22,6 +22,9 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      # Next.js standalone écoute sur $HOSTNAME : sans cela Docker met l'ID du
+      # conteneur et le healthcheck 127.0.0.1 échoue alors que le port public répond.
+      HOSTNAME: "0.0.0.0"
       PORT: "3000"
       # DATABASE_URI vient du .env : MongoDB externe, aucune surcharge ici.
       PAYLOAD_URL: http://cms:3001
@@ -48,6 +51,9 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      # Next.js standalone écoute sur $HOSTNAME : forcer 0.0.0.0 pour que le
+      # healthcheck 127.0.0.1:3001 et NPM fonctionnent.
+      HOSTNAME: "0.0.0.0"
       PORT: "3001"
       CMS_PORT: "3001"
       # DATABASE_URI vient du .env : MongoDB externe, aucune surcharge ici.
