@@ -13,18 +13,10 @@ const rubik = Rubik({
 export const metadata: Metadata = {
   title: 'iamfabriceg Bot',
   description: 'Catalogue public des jeux, commandes et actualités du bot Discord.',
-  applicationName: 'iamfabriceg Bot',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black',
-    title: 'iamfabriceg Bot',
-  },
-  // Next.js 16 n'émet que `mobile-web-app-capable` ; iOS exige la variante apple.
-  other: {
-    'apple-mobile-web-app-capable': 'yes',
-  },
 }
 
+// Edge-to-edge recommandé par Apple : le fond couvre aussi les zones sûres,
+// seul le contenu reste à l'écart de la barre d'état et de l'indicateur home.
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,

@@ -11,7 +11,7 @@ import { useDebounce } from '@/utilities/useDebounce'
 export function SearchPalette({ items }: { items: PaletteItem[] }) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
-  const dialogRef = useRef<HTMLDialogElement>(null)
+  const backdropRef = useRef<HTMLDivElement>(null)
   const openedAtRef = useRef(0)
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -48,28 +48,23 @@ export function SearchPalette({ items }: { items: PaletteItem[] }) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [closePalette, openPalette])
 
-  // showModal() promotes the dialog to the browser's top layer: no z-index or
-  // stacking context on iOS can hide it. Focus runs in the same tap gesture so
-  // the virtual keyboard opens on WebKit.
+  // On iOS, focus() must run inside the tap gesture for the keyboard to open.
   useLayoutEffect(() => {
-    if (!open) return
-    const dialog = dialogRef.current
-    if (dialog && !dialog.open) dialog.showModal()
-    inputRef.current?.focus({ preventScroll: true })
+    if (open) inputRef.current?.focus({ preventScroll: true })
   }, [open])
 
-  // iOS keeps fixed elements on the layout viewport when the keyboard shrinks
-  // the visual viewport: size the dialog to the visible area instead.
+  // iOS keeps fixed elements on the layout viewport when the keyboard shrinks the
+  // visual viewport: pin the modal to the visible area instead.
   useEffect(() => {
     if (!open) return
     const viewport = window.visualViewport
     if (!viewport) return
 
     const sync = () => {
-      const dialog = dialogRef.current
-      if (!dialog) return
-      dialog.style.setProperty('--vv-top', `${viewport.offsetTop}px`)
-      dialog.style.setProperty('--vv-height', `${viewport.height}px`)
+      const backdrop = backdropRef.current
+      if (!backdrop) return
+      backdrop.style.setProperty('--vv-top', `${viewport.offsetTop}px`)
+      backdrop.style.setProperty('--vv-height', `${viewport.height}px`)
     }
 
     sync()
@@ -110,79 +105,81 @@ export function SearchPalette({ items }: { items: PaletteItem[] }) {
 
       {open
         ? createPortal(
-            <dialog
-              ref={dialogRef}
-              className="palette"
-              aria-label="Recherche dans le site"
-              onCancel={(event) => {
-                event.preventDefault()
-                closePalette()
-              }}
+            <div
+              ref={backdropRef}
+              className="palette-backdrop"
               onClick={(event) => {
                 // Ignore the synthetic click that follows the tap which opened the modal.
-                if (event.target === dialogRef.current && Date.now() - openedAtRef.current > 350) {
+                if (event.target === event.currentTarget && Date.now() - openedAtRef.current > 350) {
                   closePalette()
                 }
               }}
-              onKeyDown={(event) => {
-                if (event.key === 'ArrowDown') {
-                  event.preventDefault()
-                  setActive((value) => Math.min(value + 1, results.length - 1))
-                } else if (event.key === 'ArrowUp') {
-                  event.preventDefault()
-                  setActive((value) => Math.max(value - 1, 0))
-                } else if (event.key === 'Enter' && results[active]) {
-                  event.preventDefault()
-                  go(results[active]!)
-                }
-              }}
             >
-              <div className="palette-input">
-                <input
-                  ref={inputRef}
-                  autoFocus
-                  value={query}
-                  onChange={(event) => {
-                    setQuery(event.target.value)
-                    setActive(0)
-                  }}
-                  placeholder="Rechercher une commande, un jeu, une page…"
-                  aria-label="Votre recherche"
-                />
-                <kbd>Échap</kbd>
+              <div
+                className="palette"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Recherche dans le site"
+                onKeyDown={(event) => {
+                  if (event.key === 'ArrowDown') {
+                    event.preventDefault()
+                    setActive((value) => Math.min(value + 1, results.length - 1))
+                  } else if (event.key === 'ArrowUp') {
+                    event.preventDefault()
+                    setActive((value) => Math.max(value - 1, 0))
+                  } else if (event.key === 'Enter' && results[active]) {
+                    event.preventDefault()
+                    go(results[active]!)
+                  }
+                }}
+              >
+                <div className="palette-input">
+                  <input
+                    ref={inputRef}
+                    autoFocus
+                    value={query}
+                    onChange={(event) => {
+                      setQuery(event.target.value)
+                      setActive(0)
+                    }}
+                    placeholder="Rechercher une commande, un jeu, une page…"
+                    aria-label="Votre recherche"
+                  />
+                  <kbd>Échap</kbd>
+                </div>
+                <ul className="palette-results">
+                  {results.length ? (
+                    results.map((item, index) => (
+                      <li key={`${item.source}-${item.label}-${index}`}>
+                        <button
+                          type="button"
+                          className={index === active ? 'palette-result active' : 'palette-result'}
+                          onMouseEnter={() => setActive(index)}
+                          onClick={() => go(item)}
+                        >
+                          <span className="palette-kind">{sourceLabels[item.source]}</span>
+                          <span className="palette-text">
+                            <strong>{item.label}</strong>
+                            {item.description ? <small>{item.description}</small> : null}
+                          </span>
+                          <span className="palette-group">{item.group}</span>
+                        </button>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="palette-empty">Aucun résultat pour « {debounced} ».</li>
+                  )}
+                </ul>
+                <div className="palette-footer">
+                  <span>
+                    <kbd>↑</kbd> <kbd>↓</kbd> naviguer · <kbd>↵</kbd> ouvrir
+                  </span>
+                  <a href={`/search?q=${encodeURIComponent(debounced)}`} onClick={closePalette}>
+                    Tous les résultats →
+                  </a>
+                </div>
               </div>
-              <ul className="palette-results">
-                {results.length ? (
-                  results.map((item, index) => (
-                    <li key={`${item.source}-${item.label}-${index}`}>
-                      <button
-                        type="button"
-                        className={index === active ? 'palette-result active' : 'palette-result'}
-                        onMouseEnter={() => setActive(index)}
-                        onClick={() => go(item)}
-                      >
-                        <span className="palette-kind">{sourceLabels[item.source]}</span>
-                        <span className="palette-text">
-                          <strong>{item.label}</strong>
-                          {item.description ? <small>{item.description}</small> : null}
-                        </span>
-                        <span className="palette-group">{item.group}</span>
-                      </button>
-                    </li>
-                  ))
-                ) : (
-                  <li className="palette-empty">Aucun résultat pour « {debounced} ».</li>
-                )}
-              </ul>
-              <div className="palette-footer">
-                <span>
-                  <kbd>↑</kbd> <kbd>↓</kbd> naviguer · <kbd>↵</kbd> ouvrir
-                </span>
-                <a href={`/search?q=${encodeURIComponent(debounced)}`} onClick={closePalette}>
-                  Tous les résultats →
-                </a>
-              </div>
-            </dialog>,
+            </div>,
             document.body,
           )
         : null}
