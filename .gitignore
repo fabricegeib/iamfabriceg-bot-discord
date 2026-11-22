@@ -18,3 +18,7 @@ coverage/
 
 # Exports MongoDB locaux (données + secrets potentiels)
 backups/
+
+# Fichiers de configuration locaux
+config/local.json
+TODOS.md
