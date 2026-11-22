@@ -6,6 +6,7 @@ import { notifyBot } from '../hooks/notify-bot'
 export const Games: CollectionConfig = {
   slug: 'games',
   admin: {
+    components: { Description: '@/components/admin/CollectionDescription' },
     useAsTitle: 'title',
     defaultColumns: ['key', 'title', 'category', 'published', 'featured'],
   },

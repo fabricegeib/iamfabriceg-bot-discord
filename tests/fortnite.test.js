@@ -137,3 +137,64 @@ test("getStats replie sur lifetime puis lit le format actuel", async () => {
   assert.equal(stats.kills, 20640);
   assert.equal(stats.matches, 12461);
 });
+
+const stwPayload = {
+  heroes: [
+    {
+      id: 1,
+      name: "Controller Harper",
+      nameFr: "Harper, contrôleuse",
+      slug: "controller-harper-unncommon",
+      class: "constructor",
+      rarity: "uncommon",
+      image: "/data/heroes/harper.png",
+      perk: { standard: "Grease The Wheels", commander: "Grease The Wheels +" },
+    },
+    {
+      name: "Riot Control Izza",
+      nameFr: "",
+      class: "ninja",
+      rarity: "legendary",
+      image: "https://example.com/izza.png",
+      abilities: [{ title: "Shurikens" }],
+    },
+  ],
+};
+
+function loadStwProvider() {
+  return loadProviderWithRequest(async (url) => {
+    assert.match(url, /iamfabriceg\.xyz\/api\/v1\/fortnite\/save-the-world\/heroes/);
+    return stwPayload;
+  });
+}
+
+test("getStwHeroes normalise les images relatives et les libellés", async () => {
+  const provider = loadStwProvider();
+  const heroes = await provider.getStwHeroes();
+
+  assert.equal(heroes.length, 2);
+  assert.equal(heroes[0].image, "https://iamfabriceg.xyz/data/heroes/harper.png");
+  assert.equal(heroes[1].image, "https://example.com/izza.png");
+  assert.equal(heroes[0].displayName, "Harper, contrôleuse");
+  assert.equal(heroes[0].className, "Constructeur");
+  assert.equal(heroes[0].index, 0);
+});
+
+test("searchStwHeroes filtre sans tenir compte des accents", async () => {
+  const provider = loadStwProvider();
+
+  const byName = await provider.searchStwHeroes("controleuse");
+  assert.equal(byName.length, 1);
+  assert.equal(byName[0].name, "Controller Harper");
+
+  const byClass = await provider.searchStwHeroes("", { heroClass: "ninja" });
+  assert.deepEqual(byClass.map((hero) => hero.name), ["Riot Control Izza"]);
+});
+
+test("getStwHero résout l'index d'autocomplétion puis le nom exact", async () => {
+  const provider = loadStwProvider();
+
+  assert.equal((await provider.getStwHero("1")).name, "Riot Control Izza");
+  assert.equal((await provider.getStwHero("controller harper")).index, 0);
+  await assert.rejects(() => provider.getStwHero("Inconnu"), { name: "NotFoundError" });
+});

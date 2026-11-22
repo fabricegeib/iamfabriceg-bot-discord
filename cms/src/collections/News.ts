@@ -7,6 +7,7 @@ import { notifyBot } from '../hooks/notify-bot'
 export const News: CollectionConfig = {
   slug: 'news',
   admin: {
+    components: { Description: '@/components/admin/CollectionDescription' },
     useAsTitle: 'title',
     defaultColumns: ['title', 'publishedAt', 'published'],
   },

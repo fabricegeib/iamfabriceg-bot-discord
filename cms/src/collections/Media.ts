@@ -5,6 +5,7 @@ import { isAdmin, isAdminOrEditor, publicRead } from '../access'
 export const Media: CollectionConfig = {
   slug: 'media',
   admin: {
+    components: { Description: '@/components/admin/CollectionDescription' },
     useAsTitle: 'alt',
   },
   timestamps: true,

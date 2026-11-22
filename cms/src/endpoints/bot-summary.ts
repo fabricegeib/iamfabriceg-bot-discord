@@ -1,5 +1,8 @@
 import type { Endpoint } from 'payload'
 
+import { botAdminActionEndpoint } from './bot-admin'
+import { botStatsEndpoint, botUsageEndpoint } from './bot-stats'
+
 type Doc = Record<string, any>
 
 const PROFILE_FIELDS = [
@@ -191,5 +194,8 @@ export const botHealthzEndpoint: Endpoint = {
 export const botEndpoints: Endpoint[] = [
   botSummaryEndpoint,
   botProfileEndpoint,
+  botUsageEndpoint,
+  botStatsEndpoint,
+  botAdminActionEndpoint,
   botHealthzEndpoint,
 ]

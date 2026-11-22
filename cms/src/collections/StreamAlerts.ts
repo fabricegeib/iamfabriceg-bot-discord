@@ -5,6 +5,7 @@ import { isAdmin, isAdminOrEditor } from '../access'
 export const StreamAlerts: CollectionConfig = {
   slug: 'streamAlerts',
   admin: {
+    components: { Description: '@/components/admin/CollectionDescription' },
     useAsTitle: 'twitchLogin',
     defaultColumns: ['twitchLogin', 'enabled', 'lastStatus', 'lastCheckedAt'],
   },

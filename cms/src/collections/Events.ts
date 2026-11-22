@@ -6,6 +6,7 @@ import { notifyBot } from '../hooks/notify-bot'
 export const Events: CollectionConfig = {
   slug: 'events',
   admin: {
+    components: { Description: '@/components/admin/CollectionDescription' },
     useAsTitle: 'title',
     defaultColumns: ['title', 'status', 'startsAt', 'published'],
   },

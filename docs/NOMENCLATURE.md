@@ -64,7 +64,21 @@ orthographe pour le global `botSettings` dans le code, l'admin, les endpoints et
 
 Ces fichiers sont des copies intégrales, non modifiées. Le `README.md` à la racine est la version courante.
 
-## 5. Décision en attente
+## 5. Versioning
+
+Nomenclature retenue : **SemVer strict** `MAJOR.MINOR.PATCH`, identique dans le package racine, le
+package `cms`, `botSettings.version` et la seed.
+
+| Incrément | Signification | Exemple |
+|---|---|---|
+| `MAJOR` | Changement incompatible (schéma CMS, contrat d'API, commandes supprimées) | `2.0.0` |
+| `MINOR` | Nouvelle fonctionnalité compatible (stats, widgets, commandes, front) | `1.1.0` |
+| `PATCH` | Correction compatible (bug, doc, style) | `1.1.1` |
+
+La version courante est **1.1.0**. Les tags Git suivent la même valeur, préfixée `v` (`v1.1.0`).
+Aucune date ni hash n'est inclus dans la version : ils appartiennent au changelog (`PLAN.md`).
+
+## 6. Décision en attente
 
 L'utilisateur a demandé de revenir sur le **renommage du dépôt GitHub**
 (`iamfabriceg-bot-discord` → `iamfabriceg-bot`) une fois les pull requests terminées.

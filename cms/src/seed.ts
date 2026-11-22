@@ -223,10 +223,17 @@ async function seedSettings(payload: any) {
     data: {
       botName: 'iamfabriceg Bot',
       description: 'Bot Discord multijeux avec catalogue Payload CMS.',
-      version: '1.0.0',
+      version: '1.1.0',
       publicUrl: process.env.PAYLOAD_PUBLIC_URL || process.env.PUBLIC_URL || 'http://localhost:3001',
       discordInvite: DISCORD_INVITE,
       maintenanceMode: false,
+      loyalty: {
+        enabled: true,
+        pointsPerUsage: 1,
+        successBonus: 1,
+        streakBonus: 2,
+        levelThresholds: [0, 10, 30, 60, 100, 200],
+      },
       socialLinks: [
         { label: 'GitHub', url: 'https://github.com/fabricegeib/iamfabriceg-bot-discord' },
         { label: 'Twitch', url: 'https://www.twitch.tv/iamfabriceg' },

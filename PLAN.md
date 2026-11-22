@@ -314,6 +314,40 @@ docker compose -f docker-compose.dev.yml --profile tools run --rm cms-seed
 
 ---
 
+## 13. Version 1.1.0 — statistiques, widgets, front et API (23/11/2026)
+
+Nomenclature : SemVer strict `MAJOR.MINOR.PATCH`, documentée dans
+[`docs/NOMENCLATURE.md#5-versioning`](./docs/NOMENCLATURE.md#5-versioning). Version courante **1.1.0**
+dans le package racine, le package `cms`, `botSettings.version`, la seed et le badge du front.
+
+| Ticket | Action | État |
+|---|---|---|
+| `VER-1` | Passage `1.0.0` → `1.1.0` partout, badge de version sur le front | ✅ |
+| `STATS-1` | Enregistrement des interactions/résultats en MongoDB via `POST /api/bot/usage` | ✅ |
+| `STATS-2` | Statistiques complètes : utilisateurs, usages, points/fidélité, classements via `GET /api/bot/stats` | ✅ |
+| `STATS-3` | Visibilité de toutes les stats dans l'admin Payload (`/admin/stats` + widget du dashboard) | ✅ |
+| `ADMIN-1` | Widgets utiles sur le dashboard Payload (statut, sparkline 7 jours, top commandes, actions) | ✅ |
+| `ADMIN-2` | Boutons d'actions signées (déploiement des commandes, sync du catalogue) via `POST /api/bot/admin/action` | ✅ |
+| `ADMIN-3` | Descriptions enrichies sur les pages de collections (bandeau, accès, compteur, liens, notes, champs clés) | ✅ |
+| `FRONT-1` | Design/couleurs/transitions inspirés de iamfabriceg.xyz (Dracula + or), responsive 1→6 colonnes | ✅ |
+| `FRONT-2` | État du bot (healthcheck, cache 30 s) + lien d'invitation et badge v1.1.0 sur le front | ✅ |
+| `FRONT-3` | Filtres Commandes/Jeux + recherche dédiée `/search` (SSR `q`/`type`, palette `Ctrl/⌘+K`) | ✅ |
+| `FRONT-4` | Documentation de l'API Payload (arborescence, endpoints, exemples) sur le front | ✅ |
+| `CMD-1` | `/fortnite save-the-world heroes` : liste + recherche locale via iamfabriceg.xyz (318 héros) | ✅ |
+| `TPL-1` | Inspiration `payload-website-starter` v3.94.1 pour admin/front (Local API, structure app router) | ✅ |
+
+### Validation du 22/11/2026
+
+- Bot : `pnpm lint` 0 erreur ; `pnpm test` **37/37** ; provider STW réel : 318 héros, filtrage accent-insensible, cache 1 h.
+- Discord : 18 commandes déployées (sous-groupe `save-the-world` → `heroes`, autocomplétion 25 choix).
+- CMS : `generate:importmap`, `generate:types`, `lint` (0 erreur), `tsc --noEmit`, build production et `docker compose config` : OK.
+- Stats réelles : `POST /api/bot/usage` **200** (`points: 2`), `GET /api/bot/stats?period=day` **200**, sparkline/barres/progression vérifiées dans le navigateur ; données de test supprimées et compteur `/ping` remis à 0.
+- Dashboard : bouton « Synchroniser le catalogue » exécuté depuis `/admin` → « terminé. 18 mise(s) à jour sur 18. ».
+- Accès : 5 collections publiques / 6 privées, `announcementChannelId` masqué (audit du 22/11 maintenu).
+- Bloqué (action utilisateur) : accorder `Gérer les rôles` au rôle `Bots` pour les boutons de rôles Discord.
+
+---
+
 ## 12. Administration Payload — stabilisation (22/11/2026)
 
 Branche : `build/docker-pnpm-payload-admin`. Documentation restructurée sous « Administration Payload »

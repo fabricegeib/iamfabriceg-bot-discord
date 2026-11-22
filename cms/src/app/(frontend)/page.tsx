@@ -3,6 +3,12 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 import config from 'payload-config'
 
+import { ApiDocs } from '@/components/frontend/ApiDocs'
+import { SearchPalette } from '@/components/frontend/SearchPalette'
+import { SiteToolbar } from '@/components/frontend/SiteToolbar'
+import { getBotStatus } from '@/utilities/getBotStatus'
+import { getSearchItems } from '@/utilities/getSearchItems'
+
 export const dynamic = 'force-dynamic'
 
 type Doc = Record<string, any>
@@ -82,13 +88,14 @@ function formatOption(option: CommandOption, depth = 0): ReactNode {
 }
 
 /**
- * Page publique EN LECTURE SEULE : aucun formulaire, aucune écriture.
- * Les données sont lues directement via la Local API de Payload.
+ * Page publique en lecture seule : aucune écriture, aucune clé API exposée.
+ * Les données viennent de la Local API de Payload et l'état du bot d'un
+ * healthcheck appelé côté serveur.
  */
 export default async function HomePage() {
   const payload = await getPayload({ config })
 
-  const [gamesResult, commandsResult, newsResult, settings] = await Promise.all([
+  const [gamesResult, commandsResult, newsResult, settings, status, searchIndex] = await Promise.all([
     payload.find({
       collection: 'games',
       depth: 0,
@@ -111,6 +118,8 @@ export default async function HomePage() {
       where: { published: { equals: true } },
     }),
     payload.findGlobal({ slug: 'botSettings', depth: 0 }),
+    getBotStatus(),
+    getSearchItems(),
   ])
 
   const settingsDoc = (settings ?? {}) as Doc
@@ -119,6 +128,8 @@ export default async function HomePage() {
   const news = newsResult.docs as Doc[]
   const socialLinks = Array.isArray(settingsDoc.socialLinks) ? settingsDoc.socialLinks : []
   const lastUpdate = (news[0]?.publishedAt ?? settingsDoc.updatedAt) as string | undefined
+  const version = text(settingsDoc.version, '1.1.0')
+  const invite = text(settingsDoc.discordInvite, '')
 
   const grouped = new Map<string, Doc[]>()
   for (const command of commands) {
@@ -130,159 +141,188 @@ export default async function HomePage() {
 
   return (
     <main className="site">
-      <header className="hero">
-        <div>
-          <p className="eyebrow">Discord Bot · CMS</p>
-          <h1>{text(settingsDoc.botName, 'iamfabriceg Bot')}</h1>
-          <p className="lead">
-            {text(
-              settingsDoc.description,
-              'Catalogue des jeux, commandes et actualités du bot Discord.',
-            )}
-          </p>
-          {settingsDoc.maintenanceMode ? (
-            <p className="badge badge-warn">🔧 Maintenance en cours</p>
-          ) : null}
-          <div className="hero-links">
-            {text(settingsDoc.discordInvite, '') ? (
-              <a className="button primary" href={String(settingsDoc.discordInvite)} rel="noreferrer">
-                Ajouter le bot à mon serveur
-              </a>
-            ) : null}
-            <Link className="button" href="/api/bot/summary">
-              API JSON
-            </Link>
-            {socialLinks.map((link: Doc, index: number) => (
-              <a
-                key={`${link.label}-${index}`}
-                className="button"
-                href={String(link.url)}
-                rel="noreferrer"
-              >
-                {text(link.label, 'Lien')}
-              </a>
-            ))}
-          </div>
+      <a className="skip-link" href="#content">Aller au contenu</a>
+
+      <header className="navbar">
+        <div className="navbar-brand-row">
+          <Link className="navbar-brand" href="/">
+            iamfabriceg<span className="brand-accent">.xyz</span> <span className="brand-sub">/ bot</span>
+          </Link>
+          <span className="version-badge">v{version}</span>
         </div>
-        <Link className="admin-link" href="/admin">
-          Administration →
-        </Link>
+        <nav aria-label="Navigation principale">
+          <ul className="navbar-nav">
+            <li><Link className="nav-link" href="#games">Jeux</Link></li>
+            <li><Link className="nav-link" href="#commands">Commandes</Link></li>
+            <li><Link className="nav-link" href="#news">Actualités</Link></li>
+            <li><Link className="nav-link" href="#api">API</Link></li>
+          </ul>
+        </nav>
+        <div className="navbar-actions">
+          <SearchPalette items={searchIndex} />
+          <Link className="admin-link" href="/admin">Administration →</Link>
+        </div>
       </header>
 
-      <section aria-labelledby="games-title">
-        <div className="section-heading">
-          <h2 id="games-title">Jeux</h2>
-          <span className="count">{games.length}</span>
-        </div>
-        <ul className="cards">
-          {games.map((game) => (
-            <li className="card" key={String(game.id)}>
-              <div className="card-top">
-                <span className="emoji" aria-hidden="true">
-                  {text(game.emoji, '🎮')}
-                </span>
-                <span className="category">{text(game.category, 'Jeu')}</span>
-              </div>
-              <h3>{text(game.title, text(game.key, 'Jeu'))}</h3>
-              {game.description ? <p>{String(game.description)}</p> : null}
-              <code>{String(game.key)}</code>
-            </li>
-          ))}
-        </ul>
-        {games.length === 0 ? <p className="empty">Aucun jeu publié pour le moment.</p> : null}
-      </section>
-
-      <section aria-labelledby="commands-title">
-        <div className="section-heading">
-          <h2 id="commands-title">Commandes</h2>
-          <span className="count">{commands.length}</span>
-        </div>
-        <p className="section-intro">
-          Toutes les commandes slash disponibles, avec leurs paramètres et exemples. Utilisez{' '}
-          <code>/help</code> dans Discord pour la même aide en direct.
-        </p>
-        {categories.map(([category, items]) => (
-          <div className="command-group" key={category}>
-            <h3 className="command-group-title">
-              {CATEGORY_LABELS[category] || category} <span className="count">{items.length}</span>
-            </h3>
-            <ul className="command-list">
-              {items.map((command) => {
-                const options = asOptions(command.options)
-                const examples = asExamples(command.examples)
-                const permissions = Array.isArray(command.permissions)
-                  ? (command.permissions as string[])
-                  : []
-                return (
-                  <li className="command-card" key={String(command.id)}>
-                    <div className="command-top">
-                      <code className="command-name">/{String(command.name).replace(/^\//, '')}</code>
-                      {command.adminOnly || permissions.includes('Administrator') ? (
-                        <span className="badge badge-admin">Administrateurs</span>
-                      ) : null}
-                      {Number(command.cooldown) > 0 ? (
-                        <span className="badge">Cooldown {Number(command.cooldown) / 1000}s</span>
-                      ) : null}
-                    </div>
-                    <p className="command-description">
-                      {text(command.description, text(command.descriptionEn, '—'))}
-                    </p>
-                    {command.usage ? (
-                      <p className="usage">
-                        Utilisation : <code>{String(command.usage)}</code>
-                      </p>
-                    ) : null}
-                    {options.length > 0 ? (
-                      <div className="command-block">
-                        <h4>Paramètres</h4>
-                        <ul className="option-list">{options.map((option) => formatOption(option))}</ul>
-                      </div>
-                    ) : null}
-                    {examples.length > 0 ? (
-                      <div className="command-block">
-                        <h4>Exemples</h4>
-                        <ul className="examples">
-                          {examples.map((example) => (
-                            <li key={example}>
-                              <code>{example}</code>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </li>
-                )
-              })}
-            </ul>
+      <div className="container" id="content">
+        <section className="jumbotron hero" aria-labelledby="hero-title">
+          <div className="hero-content">
+            <div className="hero-meta">
+              <p className="eyebrow">Discord Bot · CMS</p>
+              <span className={status.online ? 'status online' : 'status offline'}>
+                <span className="status-dot" aria-hidden="true" />
+                Bot {status.online ? 'en ligne' : 'hors ligne'}
+                {status.latencyMs !== undefined ? ` · ${status.latencyMs} ms` : ''}
+              </span>
+            </div>
+            <h1 id="hero-title">{text(settingsDoc.botName, 'iamfabriceg Bot')}</h1>
+            <p className="lead">
+              {text(
+                settingsDoc.description,
+                'Catalogue des jeux, commandes et actualités du bot Discord.',
+              )}
+            </p>
+            {settingsDoc.maintenanceMode ? (
+              <p className="badge badge-warn">🔧 Maintenance en cours</p>
+            ) : null}
+            <div className="hero-links">
+              {invite ? (
+                <a className="button primary" href={invite} rel="noreferrer">
+                  Ajouter le bot à mon serveur
+                </a>
+              ) : null}
+              <Link className="button" href="/api/bot/summary">API JSON</Link>
+              <Link className="button" href="/search">Recherche avancée</Link>
+              {socialLinks.map((link: Doc, index: number) => (
+                <a key={`${link.label}-${index}`} className="button" href={String(link.url)} rel="noreferrer">
+                  {text(link.label, 'Lien')}
+                </a>
+              ))}
+            </div>
           </div>
-        ))}
-        {commands.length === 0 ? <p className="empty">Aucune commande active.</p> : null}
-      </section>
+          <div className="hero-stats" aria-label="Chiffres clés">
+            <div><strong>{commands.length}</strong><span>commandes</span></div>
+            <div><strong>{games.length}</strong><span>jeux</span></div>
+            <div><strong>{news.length}</strong><span>actualités</span></div>
+          </div>
+        </section>
 
-      <section aria-labelledby="news-title">
-        <div className="section-heading">
-          <h2 id="news-title">Actualités</h2>
-          <span className="count">{news.length}</span>
-        </div>
-        <ul className="news">
-          {news.map((item) => (
-            <li key={String(item.id)}>
-              <h3>{String(item.title)}</h3>
-              {item.excerpt ? <p>{String(item.excerpt)}</p> : null}
-              <time>{formatDate(item.publishedAt)}</time>
-            </li>
+        <SiteToolbar />
+
+        <section id="games" data-kind="games" aria-labelledby="games-title">
+          <div className="section-heading">
+            <h2 id="games-title">Jeux</h2>
+            <span className="count">{games.length}</span>
+            <a className="section-anchor" href="#games" aria-label="Lien vers Jeux">#</a>
+          </div>
+          <ul className="cards">
+            {games.map((game) => (
+              <li className="card" key={String(game.id)}>
+                <div className="card-top">
+                  <span className="emoji" aria-hidden="true">{text(game.emoji, '🎮')}</span>
+                  <span className="category">{text(game.category, 'Jeu')}</span>
+                </div>
+                <h3>{text(game.title, text(game.key, 'Jeu'))}</h3>
+                {game.description ? <p>{String(game.description)}</p> : null}
+                <code>{String(game.key)}</code>
+              </li>
+            ))}
+          </ul>
+          {games.length === 0 ? <p className="empty">Aucun jeu publié pour le moment.</p> : null}
+        </section>
+
+        <section id="commands" data-kind="commands" aria-labelledby="commands-title">
+          <div className="section-heading">
+            <h2 id="commands-title">Commandes</h2>
+            <span className="count">{commands.length}</span>
+            <a className="section-anchor" href="#commands" aria-label="Lien vers Commandes">#</a>
+          </div>
+          <p className="section-intro">
+            Toutes les commandes slash disponibles, avec leurs paramètres et exemples. Utilisez{' '}
+            <code>/help</code> dans Discord pour la même aide en direct.
+          </p>
+          {categories.map(([category, items]) => (
+            <div className="command-group" key={category}>
+              <h3 className="command-group-title">
+                {CATEGORY_LABELS[category] || category} <span className="count">{items.length}</span>
+              </h3>
+              <ul className="command-list">
+                {items.map((command) => {
+                  const options = asOptions(command.options)
+                  const examples = asExamples(command.examples)
+                  const permissions = Array.isArray(command.permissions)
+                    ? (command.permissions as string[])
+                    : []
+                  return (
+                    <li className="command-card" key={String(command.id)}>
+                      <div className="command-top">
+                        <code className="command-name">/{String(command.name).replace(/^\//, '')}</code>
+                        {command.adminOnly || permissions.includes('Administrator') ? (
+                          <span className="badge badge-admin">Administrateurs</span>
+                        ) : null}
+                        {Number(command.cooldown) > 0 ? (
+                          <span className="badge">Cooldown {Number(command.cooldown) / 1000}s</span>
+                        ) : null}
+                      </div>
+                      <p className="command-description">
+                        {text(command.description, text(command.descriptionEn, '—'))}
+                      </p>
+                      {command.usage ? (
+                        <p className="usage">Utilisation : <code>{String(command.usage)}</code></p>
+                      ) : null}
+                      {options.length > 0 ? (
+                        <div className="command-block">
+                          <h4>Paramètres</h4>
+                          <ul className="option-list">{options.map((option) => formatOption(option))}</ul>
+                        </div>
+                      ) : null}
+                      {examples.length > 0 ? (
+                        <div className="command-block">
+                          <h4>Exemples</h4>
+                          <ul className="examples">
+                            {examples.map((example) => (
+                              <li key={example}><code>{example}</code></li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
           ))}
-        </ul>
-        {news.length === 0 ? <p className="empty">Aucune actualité publiée.</p> : null}
-      </section>
+          {commands.length === 0 ? <p className="empty">Aucune commande active.</p> : null}
+        </section>
 
-      <footer>
-        <p>Dernière mise à jour : {formatDate(lastUpdate)}</p>
-        <p>
-          {settingsDoc.version ? `Version ${settingsDoc.version} · ` : ''}
-          <Link href="/admin">Administration</Link>
-        </p>
-      </footer>
+        <section id="news" aria-labelledby="news-title">
+          <div className="section-heading">
+            <h2 id="news-title">Actualités</h2>
+            <span className="count">{news.length}</span>
+            <a className="section-anchor" href="#news" aria-label="Lien vers Actualités">#</a>
+          </div>
+          <ul className="news">
+            {news.map((item) => (
+              <li key={String(item.id)}>
+                <h3>{String(item.title)}</h3>
+                {item.excerpt ? <p>{String(item.excerpt)}</p> : null}
+                <time>{formatDate(item.publishedAt)}</time>
+              </li>
+            ))}
+          </ul>
+          {news.length === 0 ? <p className="empty">Aucune actualité publiée.</p> : null}
+        </section>
+
+        <ApiDocs />
+
+        <footer>
+          <p>Dernière mise à jour : {formatDate(lastUpdate)}</p>
+          <p>
+            Version {version} · <Link href="/admin">Administration</Link> ·{' '}
+            <a href="https://iamfabriceg.xyz" rel="noreferrer">iamfabriceg.xyz</a>
+          </p>
+        </footer>
+      </div>
     </main>
   )
 }

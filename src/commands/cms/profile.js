@@ -1,5 +1,8 @@
 const { EmbedBuilder, SlashCommandBuilder, MessageFlags } = require("discord.js");
 const { requirePayloadClient } = require("../../services/payload");
+const { createLogger } = require("../../services/logger");
+
+const log = createLogger("profile");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -23,13 +26,36 @@ module.exports = {
       discordUsername: interaction.user.tag,
     });
 
+    let stats = null;
+    try {
+      const response = await client.getStats({ userId: interaction.user.id });
+      stats = response?.profile || null;
+    } catch (error) {
+      log.debug(`Statistiques indisponibles pour le profil : ${error.message}`);
+    }
+
     const embed = new EmbedBuilder()
       .setColor(0x16a34a)
       .setTitle("✅ Profil synchronisé")
-      .setDescription(`Discord ID : \`${interaction.user.id}\``)
-      .addFields({ name: "Réponse CMS", value: JSON.stringify(result).slice(0, 900) })
-      .setTimestamp();
+      .setDescription(`Discord ID : \`${interaction.user.id}\``);
 
+    if (stats) {
+      embed.addFields({
+        name: "📊 Fidélité",
+        value: [
+          `**Niveau** ${stats.level} · **${stats.points} points**`,
+          `Commandes : ${stats.totalUsages} (dont ${stats.successUsages} réussies)`,
+          `Série : ${stats.streak} jour(s) · record ${stats.bestStreak}`,
+          stats.favoriteCommand ? `Commande favorite : \`/${stats.favoriteCommand}\`` : "",
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      });
+    } else {
+      embed.addFields({ name: "Réponse CMS", value: JSON.stringify(result).slice(0, 900) });
+    }
+
+    embed.setTimestamp();
     await interaction.editReply({ embeds: [embed] });
   },
 };

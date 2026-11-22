@@ -5,6 +5,7 @@ import { isAdmin, isAdminOrSelf } from '../access'
 export const Users: CollectionConfig = {
   slug: 'users',
   admin: {
+    components: { Description: '@/components/admin/CollectionDescription' },
     useAsTitle: 'email',
     defaultColumns: ['email', 'role', 'displayName', 'createdAt'],
   },

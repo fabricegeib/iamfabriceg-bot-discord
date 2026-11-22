@@ -1,6 +1,6 @@
 {
   "name": "iamfabriceg-bot-discord",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "iamfabriceg Bot — bot Discord personnel",
   "main": "src/index.js",
   "author": "Fabrice Geib",

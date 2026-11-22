@@ -5,6 +5,7 @@ import { isAdmin, isAdminOrEditor } from '../access'
 export const DiscordRoles: CollectionConfig = {
   slug: 'discordRoles',
   admin: {
+    components: { Description: '@/components/admin/CollectionDescription' },
     useAsTitle: 'name',
     defaultColumns: ['roleId', 'name', 'game', 'managed'],
   },

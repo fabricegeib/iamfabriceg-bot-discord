@@ -1,5 +1,7 @@
 const { createLogger } = require("../services/logger");
-const { pokeapi, rawg } = require("../services/providers");
+const { trackUsage } = require("../services/analytics");
+const { pokeapi, rawg, fortnite } = require("../services/providers");
+const { stwHeroEmbed } = require("../commands/games/fortnite");
 const { byKey } = require("../config/games");
 const {
   friendlyMessage,
@@ -31,9 +33,28 @@ function pokemonEmbed(pokemon, EmbedBuilder) {
 }
 
 module.exports = async (interaction) => {
-  try {
-    const [action, value] = interaction.customId.split(":");
+  const [action, value] = interaction.customId.split(":");
+  const commandName =
+    action === "pokemon" || interaction.customId === "starter"
+      ? "pokemon"
+      : action === "game"
+        ? "games"
+        : action === "stw"
+          ? "fortnite"
+          : action || "selectMenu";
+  const track = (outcome, extra = {}) =>
+    trackUsage({
+      commandName,
+      userId: interaction.user?.id,
+      guildId: interaction.guildId || undefined,
+      channelId: interaction.channelId || undefined,
+      source: "selectMenu",
+      outcome,
+      options: { customId: interaction.customId, values: interaction.values || [] },
+      ...extra,
+    });
 
+  try {
     if (action === "pokemon" || interaction.customId === "starter") {
       await interaction.deferUpdate();
       const query = (interaction.values?.[0] || value || "").replace(/^pokemon:/, "");
@@ -41,6 +62,7 @@ module.exports = async (interaction) => {
       const { EmbedBuilder } = require("discord.js");
       await interaction.editReply({ embeds: [pokemonEmbed(pokemon, EmbedBuilder)] });
       log.info(`${interaction.user.tag} a consulté ${pokemon.name}`);
+      track("success");
       return;
     }
 
@@ -63,12 +85,24 @@ module.exports = async (interaction) => {
       if (detail.image) embed.setImage(detail.image);
       if (detail.website) embed.setURL(detail.website);
       await interaction.editReply({ embeds: [embed] });
+      track("success");
+      return;
+    }
+
+    if (action === "stw") {
+      await interaction.deferUpdate();
+      const hero = await fortnite.getStwHero(interaction.values?.[0] || value);
+      await interaction.editReply({ embeds: [stwHeroEmbed(hero)] });
+      log.info(`${interaction.user.tag} a consulté le héros STW ${hero.displayName}`);
+      track("success");
       return;
     }
 
     log.debug(`Menu non géré : ${interaction.customId}`);
   } catch (error) {
-    if (isExpiredInteraction(error) || isAlreadyAcknowledged(error)) {
+    const expired = isExpiredInteraction(error) || isAlreadyAcknowledged(error);
+    track("error", { errorType: expired ? "expired" : "error" });
+    if (expired) {
       log.debug(`Menu expiré : ${interaction.customId}`);
       return;
     }

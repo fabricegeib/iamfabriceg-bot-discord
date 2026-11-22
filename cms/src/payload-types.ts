@@ -113,6 +113,8 @@ export interface Config {
   };
   locale: null;
   widgets: {
+    'bot-overview': BotOverviewWidget;
+    'bot-actions': BotActionsWidget;
     collections: CollectionsWidget;
   };
   user: User;
@@ -231,6 +233,11 @@ export interface Command {
     | number
     | boolean
     | null;
+  usageCount?: number | null;
+  successCount?: number | null;
+  failureCount?: number | null;
+  pointsAwarded?: number | null;
+  lastUsedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -240,12 +247,27 @@ export interface Command {
  */
 export interface CommandUsage {
   id: string;
-  command: string | Command;
+  commandName: string;
+  command?: (string | null) | Command;
+  subcommand?: string | null;
   userId: string;
   guildId?: string | null;
   channelId?: string | null;
   usedAt?: string | null;
+  outcome?: ('success' | 'error' | 'cooldown' | 'denied') | null;
   success?: boolean | null;
+  errorType?: string | null;
+  durationMs?: number | null;
+  pointsAwarded?: number | null;
+  options?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   source?: ('chatInput' | 'button' | 'selectMenu' | 'autocomplete') | null;
   updatedAt: string;
   createdAt: string;
@@ -380,6 +402,29 @@ export interface Profile {
   notes?: string | null;
   lastSeenAt?: string | null;
   banned?: boolean | null;
+  points?: number | null;
+  xp?: number | null;
+  level?: number | null;
+  totalUsages?: number | null;
+  successUsages?: number | null;
+  errorUsages?: number | null;
+  dailyUsages?: number | null;
+  weeklyUsages?: number | null;
+  streak?: number | null;
+  bestStreak?: number | null;
+  lastUsageAt?: string | null;
+  lastUsageDate?: string | null;
+  favoriteCommand?: string | null;
+  commandCounts?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  badges?: string[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -594,6 +639,11 @@ export interface CommandsSelect<T extends boolean = true> {
   game?: T;
   adminOnly?: T;
   options?: T;
+  usageCount?: T;
+  successCount?: T;
+  failureCount?: T;
+  pointsAwarded?: T;
+  lastUsedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -602,12 +652,19 @@ export interface CommandsSelect<T extends boolean = true> {
  * via the `definition` "commandUsages_select".
  */
 export interface CommandUsagesSelect<T extends boolean = true> {
+  commandName?: T;
   command?: T;
+  subcommand?: T;
   userId?: T;
   guildId?: T;
   channelId?: T;
   usedAt?: T;
+  outcome?: T;
   success?: T;
+  errorType?: T;
+  durationMs?: T;
+  pointsAwarded?: T;
+  options?: T;
   source?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -706,6 +763,21 @@ export interface ProfilesSelect<T extends boolean = true> {
   notes?: T;
   lastSeenAt?: T;
   banned?: T;
+  points?: T;
+  xp?: T;
+  level?: T;
+  totalUsages?: T;
+  successUsages?: T;
+  errorUsages?: T;
+  dailyUsages?: T;
+  weeklyUsages?: T;
+  streak?: T;
+  bestStreak?: T;
+  lastUsageAt?: T;
+  lastUsageDate?: T;
+  favoriteCommand?: T;
+  commandCounts?: T;
+  badges?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -792,6 +864,21 @@ export interface BotSetting {
     twitch?: boolean | null;
     moderation?: boolean | null;
   };
+  loyalty?: {
+    enabled?: boolean | null;
+    pointsPerUsage?: number | null;
+    successBonus?: number | null;
+    streakBonus?: number | null;
+    levelThresholds?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
   socialLinks?:
     | {
         label: string;
@@ -827,6 +914,15 @@ export interface BotSettingsSelect<T extends boolean = true> {
         twitch?: T;
         moderation?: T;
       };
+  loyalty?:
+    | T
+    | {
+        enabled?: T;
+        pointsPerUsage?: T;
+        successBonus?: T;
+        streakBonus?: T;
+        levelThresholds?: T;
+      };
   socialLinks?:
     | T
     | {
@@ -837,6 +933,26 @@ export interface BotSettingsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "bot-overview_widget".
+ */
+export interface BotOverviewWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "bot-actions_widget".
+ */
+export interface BotActionsWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

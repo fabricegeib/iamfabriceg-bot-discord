@@ -44,7 +44,8 @@ corepack pnpm cms:dev       # http://localhost:3001 (Webpack)
 MongoDB doit tourner localement (par exemple via `docker compose -f docker-compose.dev.yml up -d mongo`).
 Le script `dev` force Webpack (`next dev --webpack`) : avec Turbopack, Payload 3 + Next 16 échoue sur
 `resolve-url-loader` / `loader-runner`. Le build production (`pnpm --filter cms build`) utilise Turbopack
-et fonctionne.
+et force `NODE_ENV=production` dans le script : avec `NODE_ENV=development`, Next 16 échoue sur le
+pré-rendu de `/_global-error` (`Cannot read properties of null (reading 'useContext')`).
 
 ### Premier accès
 
@@ -76,8 +77,11 @@ figure pas : tous les POST de l'admin tombent alors en 401/403. La configuration
 | Méthode | Route | Usage |
 |---|---|---|
 | `GET` | `/api/bot/healthz` | Healthcheck du CMS (utilisé par Docker) |
-| `GET` | `/api/bot/summary` | Résumé : jeux, commandes, stats, paramètres publics |
+| `GET` | `/api/bot/summary` | Résumé public : jeux, commandes, actualités, paramètres publics |
 | `POST` | `/api/bot/profile` | Upsert d'un profil Discord (clé API requise) |
+| `POST` | `/api/bot/usage` | Enregistre une interaction (clé API requise) et met à jour profils/compteurs |
+| `GET` | `/api/bot/stats` | Statistiques complètes (clé API requise) : totaux, journal, classement, activité |
+| `POST` | `/api/bot/admin/action` | Relaie une action signée vers le bot (session admin requise) |
 
 Les routes REST standards (`/api/games`, `/api/commands`, …) restent accessibles avec :
 
@@ -90,6 +94,36 @@ Le bot les consomme via `src/services/payload.js` (`getGames`, `syncGames`, `ups
 ```bash
 curl -s http://localhost:3001/api/bot/summary | jq .
 ```
+
+### Tableau de bord et statistiques (1.1.0)
+
+Deux vues admin sont disponibles après connexion :
+
+- `/admin` : widget « Vue d’ensemble » (statut du bot, 7 derniers jours, commandes populaires, compteurs)
+  et widget « Actions rapides » (déploiement des commandes Discord, synchronisation du catalogue) ;
+- `/admin/stats` : KPI (interactions, réussites, profils, points), activité sur 30 jours, progression par
+  commande, état du bot, paliers de fidélité, journal des interactions, classement des membres.
+
+Toutes les données viennent des collections **`commandUsages`** (une ligne par interaction), **`profiles`**
+(reputation/points/série par membre) et **`commands`** (compteurs `usageCount`, `successCount`,
+`failureCount`, `pointsAwarded`), plus `botSettings.loyalty` pour les paliers.
+
+```bash
+# Enregistrer une interaction (fire and forget côté bot)
+curl -s -X POST http://localhost:3001/api/bot/usage \
+  -H 'Authorization: users API-Key <PAYLOAD_API_KEY>' -H 'Content-Type: application/json' \
+  -d '{"commandName":"ping","userId":"123","username":"Exemple","outcome":"success","source":"chatInput"}'
+
+# Lire les statistiques (période : day | week | month | all)
+curl -s 'http://localhost:3001/api/bot/stats?period=day' \
+  -H 'Authorization: users API-Key <PAYLOAD_API_KEY>' | jq .
+```
+
+Le bouton d’action admin POSTe `{ action }` sur `/api/bot/admin/action` avec le cookie de session. Le CMS
+vérifie `req.user`, puis appelle `POST {BOT_WEBHOOK_URL}/admin/actions/{action}` avec un corps signé
+HMAC-SHA256 avec `WEBHOOK_SECRET` (`x-webhook-signature`). Seules les actions `deploy-commands` et
+`sync-commands` sont autorisées ; le secret n’est jamais envoyé au navigateur. Le message affiché contient
+le détail renvoyé par le bot, par exemple « Synchroniser le catalogue : terminé. 18 mise(s) à jour sur 18. ».
 
 ### Sécurité
 
@@ -130,12 +164,21 @@ Payload (`getPayload({ config })` dans `cms/src/app/(frontend)/page.tsx`). Aucun
 appel à `PAYLOAD_URL` : il n'y a donc ni boucle HTTP ni dépendance au réseau interne pour l'affichage.
 
 Données lues : `games` publiés, `commands` actives, `news` publiées et le global `botSettings`.
-Aucun formulaire d'écriture n'est exposé.
+Aucun formulaire d'écriture n'est exposé. La page `/search` est également rendue côté serveur avec les
+paramètres `q` et `type` (`game` / `command` / `news`) ; l'index est construit par `getSearchItems.ts` à
+partir de la Local API et mis en cache 2 minutes. La palette client s'ouvre avec `Ctrl/⌘+K` ou `/`.
 
 La section « Commandes » affiche **les 18 commandes slash avec description FR, description EN de
 secours, paramètres (type, obligatoire, choix, min/max), exemples, cooldown et badge administrateur**,
 regroupées par catégorie (cms, games, info, moderation). Le lien d'invitation Discord et les
 `socialLinks` du global sont rendus dans le bandeau : c'est le ticket `CMS-FEAT-1`, désormais livré.
+
+Le bandeau affiche aussi l'**état du bot** (`getBotStatus()` interroge `BOT_WEBHOOK_URL/healthz`, cache
+30 s, repli « hors ligne » sans casser le rendu) et le **badge de version** `v1.1.0`. Le style reprend la
+palette de `https://iamfabriceg.xyz` (`#282a36`, `#44475a`, `#f8f8f2`, `#6272a4`, or `#c5ae6a`), la
+grille `.cards` de 1 à 6 colonnes, Rubik auto-hébergé et des transitions sans `@keyframes`. Une section
+« API Payload » documente l'arborescence des collections/globaux et les endpoints `/api/bot/*` avec des
+exemples copiables (`cms/src/utilities/apiDocs.ts`).
 
 ### Catalogue de commandes (source de vérité)
 
@@ -147,7 +190,11 @@ pnpm cms:sync-commands    # upsert des 18 commandes dans /api/commands (nécessi
 pnpm cms:seed             # une seed neuve importe le même catalogue
 ```
 
-Le même catalogue alimente `/help` dans Discord (via les builders) et `GET /api/bot/summary`.
+Le même catalogue alimente `/help` dans Discord (via les builders) et `GET /api/bot/summary`. Il inclut
+le sous-groupe `/fortnite save-the-world heroes` (liste, filtre par classe, recherche avec autocomplétion
+parmi les 318 héros de `https://iamfabriceg.xyz/api/v1/fortnite/save-the-world/heroes`). Le catalogue est
+généré avec **18 commandes top-level** ; le déploiement Discord et la synchronisation Payload utilisent
+ce même catalogue (vérifié le 22/11/2026 : 18 déployées, 18 mises à jour).
 
 ## 3. Globals `botSettings`
 
@@ -181,6 +228,16 @@ login + écriture + restauration de `socialLinks: []`.
 | `webhookEvents` | Journal des webhooks reçus (Payload / Twitch) et validité de signature |
 | `profiles` | Profils Discord (réputation, rôles, dernière activité) |
 | `media` | Fichiers uploadés |
+
+Chaque page Liste/Édition affiche désormais un bandeau d'informations contextuel au-dessus du tableau :
+rôle de la collection, niveau d'accès, nombre de documents, lien API REST, raccourcis vers le front ou
+les autres vues admin, puis un panneau dépliable « À savoir avant de modifier » avec les notes, les champs
+clés et un exemple de requête copiable. Ces panneaux utilisent les composants Payload (`Banner`, `Pill`,
+`Collapsible`, `CopyToClipboard`, `Link`) et leurs métadonnées sont centralisées dans
+[`cms/src/components/admin/CollectionDescription/meta.ts`](../cms/src/components/admin/CollectionDescription/meta.ts).
+Le compteur est récupéré côté serveur via `payload.count()` ; l'affichage reste fonctionnel si le comptage
+échoue. Pour ajouter une collection, ajoutez simplement son entrée dans `meta.ts` : le composant est déjà
+enregistré dans `admin.components.Description` de toutes les collections.
 
 ### Matrice d'accès (audité le 22/11/2026)
 
@@ -266,3 +323,18 @@ En local, `pnpm --filter cms build` doit être lancé par l'utilisateur proprié
 `PAYLOAD_SECRET` change invalide les cookies : se reconnecter avec `bot@iamfabriceg.local` et
 `SEED_ADMIN_PASSWORD`. Après un `cms-seed`, recopier la nouvelle `PAYLOAD_API_KEY` dans `.env` et
 recréer le conteneur `bot`.
+
+### `403 You are not allowed to perform this action` sur la sync CMS
+
+Le conteneur `bot` garde la valeur de `PAYLOAD_API_KEY` qui existait à sa création : un `.env` modifié
+après coup ne suffit pas. Recréez-le après chaque rotation de clé :
+
+```bash
+docker compose -f docker-compose.dev.yml up -d --force-recreate bot
+docker compose -f docker-compose.dev.yml exec -T bot node src/tasks/sync-cms-commands.js
+```
+
+Vérification rapide : l'empreinte `sha256(PAYLOAD_API_KEY)` lue dans le bot doit correspondre à celle
+du `.env` de l'hôte. Le dashboard affiche alors « Synchroniser le catalogue : terminé. 18 mise(s) à
+jour sur 18. ».
+

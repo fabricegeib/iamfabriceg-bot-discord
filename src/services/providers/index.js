@@ -15,6 +15,7 @@ function status() {
     { name: "PokéAPI", enabled: true, key: false },
     { name: "Fortnite (boutique / news)", enabled: true, key: false },
     { name: "Fortnite (stats)", enabled: Boolean(env.FORTNITE_API_KEY), key: true },
+    { name: "Fortnite (STW héros)", enabled: true, key: false },
     { name: "RAWG", enabled: Boolean(env.RAWG_API_KEY), key: true },
     { name: "Riot", enabled: Boolean(env.RIOT_API_KEY), key: true },
     { name: "Steam", enabled: Boolean(env.STEAM_API_KEY), key: true },

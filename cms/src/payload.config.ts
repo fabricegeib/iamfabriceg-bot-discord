@@ -34,6 +34,35 @@ const publicURL = process.env.PAYLOAD_PUBLIC_URL || 'http://localhost:3001'
 export default buildConfig({
   admin: {
     user: Users.slug,
+    dashboard: {
+      defaultLayout: [
+        { widgetSlug: 'bot-overview', width: 'full' },
+        { widgetSlug: 'bot-actions', width: 'full' },
+      ],
+      widgets: [
+        {
+          slug: 'bot-overview',
+          Component: '@/components/admin/BotOverviewWidget',
+          label: 'Statistiques du bot',
+          minWidth: 'medium',
+        },
+        {
+          slug: 'bot-actions',
+          Component: '@/components/admin/BotActionsWidget',
+          label: 'Actions rapides',
+          minWidth: 'medium',
+        },
+      ],
+    },
+    components: {
+      views: {
+        stats: {
+          Component: '@/components/admin/BotStatsView#BotStatsView',
+          path: '/stats',
+          exact: true,
+        },
+      },
+    },
     importMap: {
       baseDir: path.resolve(dirname),
     },

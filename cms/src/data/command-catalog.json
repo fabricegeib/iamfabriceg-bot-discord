@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-22T02:51:05.886Z",
+  "generatedAt": "2026-11-22T04:03:29.995Z",
   "source": "src/commands/**/*.js",
   "count": 18,
   "commands": [
@@ -59,7 +59,9 @@
       "examples": [
         "/fortnite shop",
         "/fortnite news mode:br",
-        "/fortnite stats joueur:iamfabriceg periode:lifetime"
+        "/fortnite stats joueur:iamfabriceg periode:lifetime",
+        "/fortnite save-the-world heroes nom:Controller Harper",
+        "/fortnite save-the-world heroes classe:ninja"
       ],
       "cooldown": 4000,
       "permissions": [],
@@ -185,6 +187,73 @@
               "minValue": null,
               "maxValue": null,
               "options": []
+            }
+          ]
+        },
+        {
+          "name": "save-the-world",
+          "description": "Héros Save the World (ex. : /fortnite save-the-world heroes)",
+          "descriptionEn": "Save the World heroes (e.g. /fortnite save-the-world heroes)",
+          "type": "group",
+          "required": false,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": [
+            {
+              "name": "heroes",
+              "description": "Rechercher ou lister les héros Save the World",
+              "descriptionEn": "Search or browse Save the World heroes",
+              "type": "subcommand",
+              "required": false,
+              "choices": [],
+              "minValue": null,
+              "maxValue": null,
+              "options": [
+                {
+                  "name": "nom",
+                  "description": "Nom du héros avec autocomplétion (vide pour la liste)",
+                  "descriptionEn": "Hero name, with autocomplete (leave empty for the list)",
+                  "type": "string",
+                  "required": false,
+                  "choices": [],
+                  "minValue": null,
+                  "maxValue": null,
+                  "options": []
+                },
+                {
+                  "name": "classe",
+                  "description": "Filtrer la liste par classe",
+                  "descriptionEn": "Filter the list by class",
+                  "type": "string",
+                  "required": false,
+                  "choices": [
+                    {
+                      "name": "Constructeur",
+                      "nameFr": "Constructeur",
+                      "value": "constructor"
+                    },
+                    {
+                      "name": "Ninja",
+                      "nameFr": "Ninja",
+                      "value": "ninja"
+                    },
+                    {
+                      "name": "Explorateur (Outlander)",
+                      "nameFr": "Explorateur (Outlander)",
+                      "value": "outlander"
+                    },
+                    {
+                      "name": "Soldat",
+                      "nameFr": "Soldat",
+                      "value": "soldier"
+                    }
+                  ],
+                  "minValue": null,
+                  "maxValue": null,
+                  "options": []
+                }
+              ]
             }
           ]
         }

@@ -1,12 +1,12 @@
 {
   "name": "cms",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Payload CMS v3 pour iamfabriceg Bot (Discord)",
   "type": "module",
   "scripts": {
     "dev": "next dev --webpack --port 3001",
-    "build": "next build",
+    "build": "NODE_ENV=production next build",
     "start": "next start --port 3001",
     "lint": "eslint .",
     "generate:types": "payload generate:types",
@@ -17,6 +17,7 @@
   "dependencies": {
     "@payloadcms/db-mongodb": "3.94.1",
     "@payloadcms/next": "3.94.1",
+    "@payloadcms/ui": "3.94.1",
     "@payloadcms/richtext-lexical": "3.94.1",
     "dotenv": "^16.4.7",
     "graphql": "^16.8.1",

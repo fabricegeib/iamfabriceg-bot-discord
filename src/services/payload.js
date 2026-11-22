@@ -74,8 +74,9 @@ class PayloadClient {
   }
 
   /** Appelle un custom endpoint /api/<path> exposé par le CMS. */
-  async custom(path, { method = "GET", body, params = {} } = {}) {
+  async custom(path, { method = "GET", body, params = {}, cacheTtlMs } = {}) {
     const url = buildUrl(`${this.baseUrl}/api/${String(path).replace(/^\/+/, "")}`, params);
+    const isGet = method.toUpperCase() === "GET";
     return request(url, {
       method,
       headers: {
@@ -83,7 +84,7 @@ class PayloadClient {
         ...(body ? { "Content-Type": "application/json" } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,
-      cacheTtlMs: method.toUpperCase() === "GET" ? FIVE_MIN : 0,
+      cacheTtlMs: cacheTtlMs ?? (isGet ? FIVE_MIN : 0),
       retries: 0,
     });
   }
@@ -126,6 +127,18 @@ class PayloadClient {
     // plus tard dans .env sans modifier le code.
     this.#requireWrite();
     return this.custom("bot/profile", { method: "POST", body: { discordId, ...data } });
+  }
+
+  /** Écrit un événement d'utilisation (stats + fidélité) dans le CMS. */
+  async recordUsage(data) {
+    this.#requireWrite();
+    return this.custom("bot/usage", { method: "POST", body: data });
+  }
+
+  /** Lit les statistiques agrégées. `cacheTtlMs: 0` évite un résultat périmé. */
+  async getStats(params = {}) {
+    this.#requireWrite();
+    return this.custom("bot/stats", { params, cacheTtlMs: 0 });
   }
 
   #requireWrite() {

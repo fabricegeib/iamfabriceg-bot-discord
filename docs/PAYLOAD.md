@@ -90,7 +90,60 @@ await client.upsertDiscordProfile(interaction.user.id, { username: "Fabrice" });
 
 `upsertDiscordProfile` appelle `POST /api/bot/profile`. Côté CMS, vérifiez l'en-tête `API-Key` et faites un `upsert` sur le champ `discordId`.
 
-## 5. Webhooks Payload → bot
+## 5. Télémétrie et statistiques (1.1.0)
+
+Le bot enregistre chaque interaction en **fire and forget** : `src/services/analytics.js` appelle
+`payload.recordUsage()` sans bloquer la réponse Discord. `USAGE_TELEMETRY_ENABLED=false` désactive
+l'enregistrement. Les documents sont répartis ainsi :
+
+| Endpoint | Collection(s) | Données |
+|---|---|---|
+| `POST /api/bot/usage` | `commandUsages`, `profiles`, `commands`, `botSettings.loyalty` | une interaction : commande, utilisateur, guilde, succès/échec, durée, points |
+| `GET /api/bot/stats?period=day\|week\|month\|all` | lecture des mêmes collections | totaux, succès, points, paliers, journal, classement, activité par jour |
+
+Exemples :
+
+```js
+const { createPayloadClient } = require("./src/services/payload")
+const client = createPayloadClient()
+
+await client.recordUsage({
+  commandName: "ping",
+  userId: "580073418968530973",
+  username: "iamfabriceg",
+  outcome: "success",
+  source: "chatInput",
+  durationMs: 42,
+})
+const stats = await client.getStats({ period: "week", userId: "580073418968530973" })
+```
+
+Ces chiffres alimentent le widget du dashboard `/admin` et la vue complète `/admin/stats` (voir
+[`docs/CMS.md#tableau-de-bord-et-statistiques-110`](./CMS.md#tableau-de-bord-et-statistiques-110)).
+Une vérification réelle a été faite le 22/11/2026 : `POST /api/bot/usage` → 200 (`points: 2`),
+`GET /api/bot/stats?period=day` → 200 (`filtered: 1`, `successes: 1`), puis la donnée de test a été
+supprimée et le compteur `/ping` remis à 0.
+
+## 6. Actions admin signées
+
+`POST /api/bot/admin/action` est réservé à un utilisateur connecté à l'admin. Le CMS signe un corps
+JSON `{ action, requestedBy }` avec `WEBHOOK_SECRET` (HMAC-SHA256, en-tête `x-webhook-signature`) et
+l'envoie à `POST {BOT_WEBHOOK_URL}/admin/actions/{action}`. Le bot refuse toute signature invalide et ne
+connaît que `deploy-commands` et `sync-commands`. Le secret ne transite jamais par le navigateur.
+
+```bash
+curl -s -X POST http://localhost:3001/api/bot/admin/action \
+  -H 'Content-Type: application/json' -b cookies.txt \
+  -d '{"action":"sync-commands"}'
+# → { "ok": true, "action": "sync-commands", "status": 200,
+#     "result": { "ok": true, "result": { "created": 0, "updated": 18, "total": 18 } } }
+```
+
+Si la sync échoue avec `403`, le conteneur `bot` utilise une ancienne `PAYLOAD_API_KEY` : le recréer
+(`docker compose -f docker-compose.dev.yml up -d --force-recreate bot`). Voir le
+[dépannage CMS](./CMS.md#403-you-are-not-allowed-to-perform-this-action-sur-la-sync-cms).
+
+## 7. Webhooks Payload → bot
 
 ### Côté CMS (hook `afterChange`)
 
@@ -122,7 +175,7 @@ dans le bot et le CMS (voir [`docs/CMS.md#5-webhooks`](./CMS.md#5-webhooks)).
 
 Sans `WEBHOOK_SECRET`, les webhooks sont acceptés sans vérification — **à ne faire qu'en développement local**.
 
-## 6. Sécurité
+## 8. Sécurité
 
 - Ne jamais coller la clé dans le chat ni dans un fichier versionné : uniquement `.env`.
 - Utiliser une clé dédiée au bot, avec le moins de droits possible.

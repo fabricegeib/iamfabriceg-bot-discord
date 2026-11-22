@@ -26,8 +26,9 @@ test("findGame gère les alias, la casse et les accents", () => {
 });
 
 test("les rôles sont résolus depuis la config ou l'environnement", () => {
-  assert.equal(roleIdFor(byKey.get("fortnite")), "722561307903262831");
-  assert.equal(roleIdFor(byKey.get("aniimo")), null);
+  // Env explicite : le test ne doit pas dépendre des variables du .env local.
+  assert.equal(roleIdFor(byKey.get("fortnite"), {}), "722561307903262831");
+  assert.equal(roleIdFor(byKey.get("aniimo"), {}), null);
   assert.equal(roleIdFor(byKey.get("aniimo"), { ROLE_ANIIMO_ID: "123" }), "123");
 
   const withEnv = gamesWithRoles({ ROLE_ANIIMO_ID: "111", ROLE_GOALS_ID: "222" });

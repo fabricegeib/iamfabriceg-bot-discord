@@ -12,7 +12,7 @@ export const BotSettings: GlobalConfig = {
   fields: [
     { name: 'botName', type: 'text', required: true, defaultValue: 'iamfabriceg Bot' },
     { name: 'description', type: 'textarea' },
-    { name: 'version', type: 'text', defaultValue: '1.0.0' },
+    { name: 'version', type: 'text', defaultValue: '1.1.0' },
     { name: 'publicUrl', type: 'text' },
     { name: 'discordInvite', type: 'text' },
     { name: 'twitchChannel', type: 'text' },
@@ -39,6 +39,23 @@ export const BotSettings: GlobalConfig = {
         { name: 'deals', type: 'checkbox', defaultValue: true },
         { name: 'twitch', type: 'checkbox', defaultValue: true },
         { name: 'moderation', type: 'checkbox', defaultValue: true },
+      ],
+    },
+    {
+      name: 'loyalty',
+      type: 'group',
+      label: 'Points & fidélité',
+      fields: [
+        { name: 'enabled', type: 'checkbox', defaultValue: true },
+        { name: 'pointsPerUsage', type: 'number', defaultValue: 1, min: 0 },
+        { name: 'successBonus', type: 'number', defaultValue: 1, min: 0 },
+        { name: 'streakBonus', type: 'number', defaultValue: 2, min: 0 },
+        {
+          name: 'levelThresholds',
+          type: 'json',
+          label: 'Paliers (JSON, ex. [0,10,30,60])',
+          defaultValue: [0, 10, 30, 60, 100, 200],
+        },
       ],
     },
     {

@@ -6,8 +6,9 @@ import { notifyBot } from '../hooks/notify-bot'
 export const Commands: CollectionConfig = {
   slug: 'commands',
   admin: {
+    components: { Description: '@/components/admin/CollectionDescription' },
     useAsTitle: 'name',
-    defaultColumns: ['name', 'category', 'enabled', 'adminOnly'],
+    defaultColumns: ['name', 'category', 'usageCount', 'successCount', 'lastUsedAt', 'enabled'],
   },
   timestamps: true,
   access: {
@@ -41,5 +42,11 @@ export const Commands: CollectionConfig = {
     },
     { name: 'adminOnly', type: 'checkbox', defaultValue: false },
     { name: 'options', type: 'json', label: 'Options Discord (JSON)' },
+    // --- Compteurs alimentés par /api/bot/usage ----------------------------
+    { name: 'usageCount', type: 'number', defaultValue: 0, min: 0 },
+    { name: 'successCount', type: 'number', defaultValue: 0, min: 0 },
+    { name: 'failureCount', type: 'number', defaultValue: 0, min: 0 },
+    { name: 'pointsAwarded', type: 'number', defaultValue: 0, min: 0 },
+    { name: 'lastUsedAt', type: 'date' },
   ],
 }

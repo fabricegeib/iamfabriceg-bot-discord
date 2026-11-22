@@ -8,15 +8,30 @@ const {
   isAlreadyAcknowledged,
 } = require("./error");
 const { createLogger } = require("../services/logger");
+const { trackUsage } = require("../services/analytics");
 
 const log = createLogger("button");
 
+const COMMAND_BY_ACTION = { role: "roles", game: "games" };
+
 module.exports = async (interaction) => {
   const [action, value] = interaction.customId.split(":");
+  const track = (outcome, extra = {}) =>
+    trackUsage({
+      commandName: COMMAND_BY_ACTION[action] || action || "button",
+      userId: interaction.user?.id,
+      guildId: interaction.guildId || undefined,
+      channelId: interaction.channelId || undefined,
+      source: "button",
+      outcome,
+      options: { customId: interaction.customId },
+      ...extra,
+    });
 
   try {
     if (action === "role" && value) {
       await toggleRole(interaction, value);
+      track("success");
       return;
     }
 
@@ -33,12 +48,15 @@ module.exports = async (interaction) => {
         .addFields({ name: "Commandes liées", value: "/games info · /pokemon · /fortnite · /riot · /steam" });
       if (game.links?.site) embed.setURL(game.links.site);
       await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+      track("success");
       return;
     }
 
     log.debug(`Bouton non géré : ${interaction.customId}`);
   } catch (error) {
-    if (isExpiredInteraction(error) || isAlreadyAcknowledged(error)) {
+    const expired = isExpiredInteraction(error) || isAlreadyAcknowledged(error);
+    track("error", { errorType: expired ? "expired" : "error" });
+    if (expired) {
       log.debug(`Bouton expiré : ${interaction.customId}`);
       return;
     }

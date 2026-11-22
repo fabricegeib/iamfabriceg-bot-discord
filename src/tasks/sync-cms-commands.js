@@ -3,11 +3,11 @@ const { FeatureDisabledError } = require("../services/errors");
 const { buildCommandCatalog } = require("../utils/command-catalog");
 
 /**
- * Synchronise les 18 commandes Discord (métadonnées réelles) dans la collection
- * `commands` de Payload. Nécessite PAYLOAD_API_KEY dans .env.
+ * Synchronise le catalogue de commandes Discord dans la collection `commands`
+ * de Payload. Nécessite PAYLOAD_API_KEY dans .env.
  * Les documents créés manuellement dans l'admin sont conservés.
  */
-async function main() {
+async function run() {
   const client = createPayloadClient();
   if (!client) throw new FeatureDisabledError("Payload CMS", "PAYLOAD_URL");
   if (!client.apiKey) throw new FeatureDisabledError("l'écriture des commandes CMS", "PAYLOAD_API_KEY");
@@ -46,9 +46,14 @@ async function main() {
   }
 
   console.log(`Commandes CMS synchronisées : ${created} créée(s), ${updated} mise(s) à jour.`);
+  return { created, updated, total: catalog.commands.length };
 }
 
-main().catch((error) => {
-  console.error("Synchronisation des commandes échouée :", error.message);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  run().catch((error) => {
+    console.error("Synchronisation des commandes échouée :", error.message);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { run };

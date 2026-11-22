@@ -23,6 +23,7 @@ const schema = z.object({
   PAYLOAD_AUTH_SLUG: optional("users"),
   PAYLOAD_GAMES_SLUG: optional("games"),
   PAYLOAD_API_KEY: optional(),
+  USAGE_TELEMETRY_ENABLED: optional("true"),
   ROLES_CHANNEL_ID: optional("652684137957818378"),
   LOG_CHANNEL_ID: optional(),
   ANNOUNCEMENT_CHANNEL_ID: optional(),

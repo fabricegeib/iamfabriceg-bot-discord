@@ -5,6 +5,7 @@ import { isAdmin } from '../access'
 export const WebhookEvents: CollectionConfig = {
   slug: 'webhookEvents',
   admin: {
+    components: { Description: '@/components/admin/CollectionDescription' },
     useAsTitle: 'event',
     defaultColumns: ['source', 'event', 'collectionSlug', 'processed', 'receivedAt'],
   },

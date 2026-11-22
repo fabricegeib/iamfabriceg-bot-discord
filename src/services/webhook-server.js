@@ -73,7 +73,44 @@ function createWebhookServer({ port = 3000, secret = "", twitchSecret = "", onEv
     }
 
     if (req.method === "GET" && url.pathname === "/") {
-      return json(res, 200, { service: "iamfabriceg-bot", endpoints: ["/healthz", "/webhooks/payload", "/webhooks/twitch"] });
+      return json(res, 200, {
+        service: "iamfabriceg-bot",
+        endpoints: ["/healthz", "/webhooks/payload", "/webhooks/twitch", "/admin/actions/:action"],
+      });
+    }
+
+    // Actions déclenchées depuis l'admin Payload (signature HMAC partagée).
+    if (req.method === "POST" && url.pathname.startsWith("/admin/actions/")) {
+      if (!secret) return json(res, 503, { ok: false, error: "WEBHOOK_SECRET non configuré" });
+
+      let raw;
+      try {
+        raw = await readBody(req);
+      } catch (error) {
+        return json(res, 413, { ok: false, error: error.message });
+      }
+      if (!verifySignature(secret, raw, req.headers["x-webhook-signature"])) {
+        log.warn("Action admin : signature invalide");
+        return json(res, 401, { ok: false, error: "Signature invalide" });
+      }
+
+      const action = url.pathname.slice("/admin/actions/".length);
+      const ALLOWED = ["deploy-commands", "sync-commands"];
+      if (!ALLOWED.includes(action)) {
+        return json(res, 400, { ok: false, error: `Action inconnue : ${action}` });
+      }
+
+      try {
+        const result =
+          action === "deploy-commands"
+            ? await require("../tasks/deploy-commands").run({})
+            : await require("../tasks/sync-cms-commands").run();
+        log.info(`Action admin exécutée : ${action}`);
+        return json(res, 200, { ok: true, action, result });
+      } catch (error) {
+        log.error(`Échec de l'action admin ${action}`, error);
+        return json(res, 500, { ok: false, error: error.message });
+      }
     }
 
     if (req.method === "POST" && url.pathname === "/webhooks/payload") {
