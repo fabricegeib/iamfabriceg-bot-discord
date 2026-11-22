@@ -23,8 +23,7 @@ export const botSummaryEndpoint: Endpoint = {
   handler: async (req) => {
     const payload = req.payload
 
-    const [games, commands, settings, gamesCount, commandsCount, newsCount, eventsCount, profilesCount] =
-      await Promise.all([
+    const [games, commands, settings, gamesCount, commandsCount, newsCount] = await Promise.all([
         payload.find({
           collection: 'games',
           depth: 0,
@@ -43,8 +42,6 @@ export const botSummaryEndpoint: Endpoint = {
         payload.count({ collection: 'games' }),
         payload.count({ collection: 'commands' }),
         payload.count({ collection: 'news' }),
-        payload.count({ collection: 'events' }),
-        payload.count({ collection: 'profiles' }),
       ])
 
     const settingsDoc = (settings ?? {}) as Doc
@@ -63,8 +60,17 @@ export const botSummaryEndpoint: Endpoint = {
       commands: commands.docs.map((command: Doc) => ({
         name: command.name,
         description: command.description,
+        descriptionEn: command.descriptionEn,
         category: command.category,
+        aliases: Array.isArray(command.aliases) ? command.aliases : [],
         usage: command.usage,
+        examples: (Array.isArray(command.examples) ? command.examples : []).map(
+          (entry: Doc) => (typeof entry === 'string' ? entry : entry?.example),
+        ),
+        cooldown: command.cooldown || 0,
+        permissions: Array.isArray(command.permissions) ? command.permissions : [],
+        adminOnly: Boolean(command.adminOnly),
+        options: Array.isArray(command.options) ? command.options : [],
         enabled: command.enabled,
       })),
       settings: {
@@ -74,6 +80,7 @@ export const botSummaryEndpoint: Endpoint = {
         discordInvite: settingsDoc.discordInvite,
         twitchChannel: settingsDoc.twitchChannel,
         maintenanceMode: settingsDoc.maintenanceMode,
+        socialLinks: Array.isArray(settingsDoc.socialLinks) ? settingsDoc.socialLinks : [],
         features: {
           games: features.games,
           pokemon: features.pokemon,
@@ -85,12 +92,12 @@ export const botSummaryEndpoint: Endpoint = {
           moderation: features.moderation,
         },
       },
+      // Seuls les comptes publics sont exposés : aucune donnée de membre
+      // (profiles) ni de journal interne (events) n'est rendue publiquement.
       stats: {
         games: gamesCount.totalDocs,
         commands: commandsCount.totalDocs,
         news: newsCount.totalDocs,
-        events: eventsCount.totalDocs,
-        profiles: profilesCount.totalDocs,
       },
     })
   },

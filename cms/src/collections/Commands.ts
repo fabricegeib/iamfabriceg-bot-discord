@@ -22,6 +22,7 @@ export const Commands: CollectionConfig = {
   fields: [
     { name: 'name', type: 'text', required: true, unique: true, index: true },
     { name: 'description', type: 'textarea' },
+    { name: 'descriptionEn', type: 'textarea', label: 'Description (anglais)' },
     { name: 'category', type: 'text' },
     { name: 'aliases', type: 'text', hasMany: true, defaultValue: [] },
     { name: 'usage', type: 'text' },

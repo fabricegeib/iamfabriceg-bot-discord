@@ -7,6 +7,8 @@ const schema = z.object({
   DISCORD_TOKEN: z.string().trim().min(1, "DISCORD_TOKEN est requis"),
   CLIENT_ID: z.string().trim().min(1, "CLIENT_ID est requis"),
   GUILD_ID: z.string().trim().min(1, "GUILD_ID est requis"),
+  DISCORD_INVITE_URL: optional(),
+  DISCORD_INVITE_URL_GUILD: optional(),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   WEBHOOK_SECRET: optional(),

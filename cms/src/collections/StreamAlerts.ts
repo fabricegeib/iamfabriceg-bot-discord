@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdmin, isAdminOrEditor, publicRead } from '../access'
+import { isAdmin, isAdminOrEditor } from '../access'
 
 export const StreamAlerts: CollectionConfig = {
   slug: 'streamAlerts',
@@ -10,7 +10,8 @@ export const StreamAlerts: CollectionConfig = {
   },
   timestamps: true,
   access: {
-    read: publicRead,
+    // Alertes Twitch internes : admin/éditeur uniquement.
+    read: isAdminOrEditor,
     create: isAdminOrEditor,
     update: isAdminOrEditor,
     delete: isAdmin,

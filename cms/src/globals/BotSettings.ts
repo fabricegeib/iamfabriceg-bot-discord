@@ -16,7 +16,15 @@ export const BotSettings: GlobalConfig = {
     { name: 'publicUrl', type: 'text' },
     { name: 'discordInvite', type: 'text' },
     { name: 'twitchChannel', type: 'text' },
-    { name: 'announcementChannelId', type: 'text' },
+    {
+      name: 'announcementChannelId',
+      type: 'text',
+      label: 'Salon d’annonce (interne)',
+      // Identifiant technique : jamais exposé au public via l'API/front.
+      access: {
+        read: ({ req: { user } }) => user?.role === 'admin' || user?.role === 'editor',
+      },
+    },
     { name: 'maintenanceMode', type: 'checkbox', defaultValue: false },
     {
       name: 'features',

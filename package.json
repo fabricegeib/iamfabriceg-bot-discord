@@ -25,6 +25,8 @@
     "cms:start": "pnpm --filter cms start",
     "cms:seed": "pnpm --filter cms seed",
     "cms:types": "pnpm --filter cms generate:types",
+    "cms:catalog": "node src/tasks/export-command-catalog.js",
+    "cms:sync-commands": "node src/tasks/sync-cms-commands.js",
     "docker:dev": "docker compose -f docker-compose.dev.yml up -d",
     "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
     "docker:prod": "docker compose -f docker-compose.prod.yml up -d --build",

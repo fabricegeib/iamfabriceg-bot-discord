@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdmin, isAdminOrEditor, publicRead } from '../access'
+import { isAdmin, isAdminOrEditor } from '../access'
 
 export const DiscordRoles: CollectionConfig = {
   slug: 'discordRoles',
@@ -10,7 +10,8 @@ export const DiscordRoles: CollectionConfig = {
   },
   timestamps: true,
   access: {
-    read: publicRead,
+    // Configuration interne des rôles Discord : admin/éditeur uniquement.
+    read: isAdminOrEditor,
     create: isAdminOrEditor,
     update: isAdminOrEditor,
     delete: isAdmin,

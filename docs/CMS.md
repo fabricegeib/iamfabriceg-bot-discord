@@ -130,8 +130,24 @@ Payload (`getPayload({ config })` dans `cms/src/app/(frontend)/page.tsx`). Aucun
 appel à `PAYLOAD_URL` : il n'y a donc ni boucle HTTP ni dépendance au réseau interne pour l'affichage.
 
 Données lues : `games` publiés, `commands` actives, `news` publiées et le global `botSettings`.
-Aucun formulaire d'écriture n'est exposé. `socialLinks` est éditable dans l'admin mais n'est pas encore
-rendu sur la page publique : prévu dans `PLAN.md` (`CMS-FEAT-1`).
+Aucun formulaire d'écriture n'est exposé.
+
+La section « Commandes » affiche **les 18 commandes slash avec description FR, description EN de
+secours, paramètres (type, obligatoire, choix, min/max), exemples, cooldown et badge administrateur**,
+regroupées par catégorie (cms, games, info, moderation). Le lien d'invitation Discord et les
+`socialLinks` du global sont rendus dans le bandeau : c'est le ticket `CMS-FEAT-1`, désormais livré.
+
+### Catalogue de commandes (source de vérité)
+
+Les métadonnées viennent des `SlashCommandBuilder` réels du bot, jamais d'une liste recopiée :
+
+```bash
+pnpm cms:catalog          # génère cms/src/data/command-catalog.json depuis src/commands/**/*.js
+pnpm cms:sync-commands    # upsert des 18 commandes dans /api/commands (nécessite PAYLOAD_API_KEY)
+pnpm cms:seed             # une seed neuve importe le même catalogue
+```
+
+Le même catalogue alimente `/help` dans Discord (via les builders) et `GET /api/bot/summary`.
 
 ## 3. Globals `botSettings`
 
@@ -140,10 +156,11 @@ Slug : `botSettings` — accessible à la lecture publique, en écriture aux rô
 | Champ | Type | Rôle |
 |---|---|---|
 | `botName`, `description`, `version`, `publicUrl` | text/textarea | Identité affichée par le bot et le front |
-| `discordInvite`, `twitchChannel`, `announcementChannelId` | text | Liens et salon d'annonce |
+| `discordInvite`, `twitchChannel` | text | Liens publics (dont l'invitation OAuth2 du bot) |
+| `announcementChannelId` | text | Salon d'annonce **interne** : lecture limitée à `admin`/`editor` |
 | `maintenanceMode` | checkbox | Active le mode maintenance |
 | `features` | group | `games`, `pokemon`, `fortnite`, `riot`, `steam`, `twitch`, `cms` |
-| `socialLinks` | array | `label` + `url` ; tableau vide par défaut (`defaultValue: []`) |
+| `socialLinks` | array | `label` + `url` ; `defaultValue: []` (la seed propose GitHub/Twitch, modifiables) |
 
 Le bouton « Add Social Link » ajoute une ligne `{ label, url }` au tableau. La sauvegarde doit répondre
 `200` et persister la valeur ; le script [`scripts/cms-smoke.sh`](../scripts/cms-smoke.sh) automatise
@@ -155,7 +172,7 @@ login + écriture + restauration de `socialLinks: []`.
 |---|---|
 | `users` | Auth, rôles `admin` / `editor` / `bot`, clés API |
 | `games` | 17 jeux, clé stable, rôle Discord, catégorie, emoji, liens, publication |
-| `commands` | Nom, usage, exemples, alias, cooldown, permissions, jeu associé |
+| `commands` | Nom, description FR/EN, catégorie, alias, usage, exemples, cooldown, permissions, `adminOnly`, options JSON, jeu associé |
 | `commandUsages` | Historique d'utilisation (utilisateur, guilde, succès, source) |
 | `discordRoles` | Rôles Discord et leur jeu associé |
 | `events` | Événements, statut `scheduled` / `live` / `ended` |
@@ -164,6 +181,21 @@ login + écriture + restauration de `socialLinks: []`.
 | `webhookEvents` | Journal des webhooks reçus (Payload / Twitch) et validité de signature |
 | `profiles` | Profils Discord (réputation, rôles, dernière activité) |
 | `media` | Fichiers uploadés |
+
+### Matrice d'accès (audité le 22/11/2026)
+
+| Collection / global | Lecture anonyme (`GET /api/...`) | Écriture |
+|---|---|---|
+| `games`, `commands`, `news`, `media`, `botSettings` | ✅ public (front + `/api/bot/summary`) | `admin` / `editor` (`delete` : `admin`) |
+| `events`, `streamAlerts`, `discordRoles` | ❌ 403 — données internes, non affichées sur le front | `admin` / `editor` |
+| `profiles`, `commandUsages`, `webhookEvents` | ❌ 403 — données de membres / journaux | `admin` / `editor` ou `admin` |
+| `users` | ❌ 403 (`isAdminOrSelf`) | `admin` |
+| `announcementChannelId` (champ de `botSettings`) | ❌ masqué même si le global est public | `admin` / `editor` |
+
+`GET /api/bot/summary` reste public mais n'expose plus que les compteurs publics (`games`,
+`commands`, `news`) : les compteurs `events`/`profiles` ont été retirés. `POST /api/bot/profile`
+exige une clé API (`Authorization: users API-Key …`) et répond `401` sans clé. Vérification réelle :
+200 sur les 5 collections publiques, 403 sur les 6 privées, 401 sur `/bot/profile`.
 
 Points de schéma vérifiés (aucun ne provoque de spinner) : `aliases`/`permissions` en `text hasMany`,
 `examples` en array, `options` en `json`, `source`/`status` en `select` avec `options` valides, `richText`

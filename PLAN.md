@@ -326,7 +326,12 @@ Branche : `build/docker-pnpm-payload-admin`. Documentation restructurée sous «
 | `CMS-BUG-3` | Dev CMS en `next dev --webpack` (Turbopack casse `resolve-url-loader`) | ✅ |
 | `CMS-DOC-1` | Restructuration `docs/CMS.md` en 6 sous-sections | ✅ |
 | `CMS-TEST-1` | `scripts/cms-smoke.sh` : login + ajout/suppression d'un `socialLinks` de test | ✅ |
-| `CMS-FEAT-1` | Afficher `socialLinks` sur le front public et dans `/api/bot/summary` | ⏳ |
+| `CMS-FEAT-1` | Afficher `socialLinks` sur le front public et dans `/api/bot/summary` | ✅ |
+| `CMS-FEAT-2` | Front public : 18 commandes avec descriptions, options/choix, exemples et cooldowns | ✅ |
+| `CMS-FEAT-3` | Catalogue généré depuis les builders (`pnpm cms:catalog` / `cms:sync-commands`) | ✅ |
+| `CMS-SEC-1` | Audit d'accès : 5 collections publiques, 6 privées, champ `announcementChannelId` masqué | ✅ |
+| `BOT-BUG-4` | Fortnite : lecture du format actuel `stats.all.overall` (nombres bruts) | ✅ |
+| `BOT-FEAT-2` | Lien d'invitation OAuth2 avec `ManageRoles` + procédure `docs/DISCORD.md` | ✅ |
 | `BOT-BUG-1` | Boutons de rôles : accorder `Gérer les rôles` au rôle `Bots` dans Discord (action utilisateur) | ⏳ |
 | `BOT-BUG-2` | Erreurs 10062/40060, `ephemeral` déprécié, cooldown remboursé, messages d'erreur | ✅ |
 | `BOT-BUG-3` | Fortnite : repli `season` → `lifetime`, option `periode`, User-Agent HTTP pour `/deals` | ✅ |
@@ -334,7 +339,7 @@ Branche : `build/docker-pnpm-payload-admin`. Documentation restructurée sous «
 
 ### Validation du 22/11/2026
 
-- `pnpm lint` : 0 erreur ; `pnpm test` : **29/29**
+- `pnpm lint` : 0 erreur ; `pnpm test` : **31/31**
 - `pnpm --filter cms lint` : 0 erreur (8 avertissements `no-explicit-any`)
 - `pnpm --filter cms build` : succès (Turbopack production)
 - `docker compose config` (dev + prod) : valides

@@ -49,6 +49,27 @@ async function getNews(mode = "br") {
 }
 
 /**
+ * Normalise une valeur de stats : l'API renvoie soit un nombre brut
+ * (format actuel), soit `{ value: number }` (ancien format).
+ */
+function statValue(value) {
+  if (typeof value === "number" || typeof value === "string") return value;
+  if (value && typeof value === "object" && "value" in value) return value.value;
+  return 0;
+}
+
+/**
+ * Extrait le mode "global" d'une réponse fortnite-api.com.
+ * Structure actuelle : `data.data.stats.all.overall` (clés `matches`, `lastModified`).
+ * Ancienne structure : première entrée de `data.data.stats` (clés `matchesPlayed`).
+ */
+function extractOverall(payload) {
+  const stats = payload?.data?.stats || {};
+  const all = stats.all || Object.values(stats)[0] || {};
+  return all.overall || all;
+}
+
+/**
  * Statistiques Battle Royale — nécessite FORTNITE_API_KEY.
  * `timeWindow` : "season" (par défaut) ou "lifetime".
  * Si le joueur n'a pas encore joué cette saison, on replie automatiquement sur
@@ -72,11 +93,12 @@ async function getStats(name, accountType = "epic", timeWindow = "season") {
   try {
     data = await fetchStats(window);
   } catch (error) {
+    const body = typeof error.body === "string" ? error.body : JSON.stringify(error.body || "");
     const noSeasonMatch =
       window === "season" &&
       error instanceof HttpError &&
       error.status === 404 &&
-      /didnt play any match yet/i.test(typeof error.body === "string" ? error.body : "");
+      /didn'?t play any match yet/i.test(body);
     if (!noSeasonMatch) throw error;
     usedWindow = "lifetime";
     data = await fetchStats("lifetime");
@@ -84,20 +106,19 @@ async function getStats(name, accountType = "epic", timeWindow = "season") {
 
   if (data?.status !== 200) throw new NotFoundError(`Aucune statistique pour « ${name} ».`);
 
-  const stats = data.data?.stats || {};
-  const firstMode = Object.values(stats)[0] || {};
+  const overall = extractOverall(data);
   return {
-    name: data.data?.name || name,
-    level: data.data?.level,
-    image: data.data?.image,
+    name: data.data?.account?.name || data.data?.name || name,
+    level: data.data?.battlePass?.level ?? data.data?.level,
+    image: data.data?.image || data.data?.account?.image,
     window: usedWindow,
     fallback: usedWindow !== window,
-    wins: firstMode?.wins?.value ?? 0,
-    kills: firstMode?.kills?.value ?? 0,
-    matches: firstMode?.matchesPlayed?.value ?? 0,
-    kd: firstMode?.kd?.value ?? 0,
-    winRate: firstMode?.winRate?.value ?? 0,
-    updated: data.data?.stats?.updated,
+    wins: Number(statValue(overall?.wins)) || 0,
+    kills: Number(statValue(overall?.kills)) || 0,
+    matches: Number(statValue(overall?.matches ?? overall?.matchesPlayed)) || 0,
+    kd: Number(statValue(overall?.kd)) || 0,
+    winRate: Number(statValue(overall?.winRate)) || 0,
+    updated: overall?.lastModified || data.data?.stats?.updated,
   };
 }
 

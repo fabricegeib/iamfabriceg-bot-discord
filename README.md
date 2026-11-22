@@ -118,6 +118,17 @@ Accès rapide : admin `http://localhost:3001/admin`, front `http://localhost:300
 santé `GET /api/bot/healthz`, résumé `GET /api/bot/summary`. Les hooks `afterChange` publient vers
 `BOT_WEBHOOK_URL/webhooks/payload` avec une signature HMAC-SHA256 (`x-payload-signature`).
 
+Le front affiche les **18 commandes** (descriptions, paramètres, choix, exemples, cooldowns) et les
+liens sociaux du global. Pour resynchroniser l'admin après modification d'une commande :
+
+```bash
+corepack pnpm cms:catalog         # régénère cms/src/data/command-catalog.json
+corepack pnpm cms:sync-commands   # upsert dans /api/commands (PAYLOAD_API_KEY requis)
+```
+
+Le lien d'invitation OAuth2 (avec `ManageRoles`) est dans `.env` (`DISCORD_INVITE_URL` et
+`DISCORD_INVITE_URL_GUILD`) et affiché par `/permissions`. Voir [`docs/DISCORD.md`](./docs/DISCORD.md).
+
 Variables principales :
 
 ```env

@@ -5,9 +5,13 @@ import { randomBytes } from 'node:crypto'
 import { getPayload } from 'payload'
 
 import config from './payload.config'
+import commandCatalog from './data/command-catalog.json'
 
 const BOT_EMAIL = 'bot@iamfabriceg.local'
 const BOT_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'Admin1234!'
+const DISCORD_INVITE =
+  process.env.DISCORD_INVITE_URL ||
+  'https://discord.com/oauth2/authorize?client_id=580073418968530973&permissions=1099780410374&scope=bot%20applications.commands'
 
 type SeedDoc = Record<string, any>
 
@@ -74,53 +78,22 @@ const SEED_GAMES = [
   },
 ]
 
-const SEED_COMMANDS = [
-  {
-    name: 'games',
-    description: 'Affiche le catalogue des jeux ou la fiche d’un jeu.',
-    category: 'games',
-    aliases: ['game', 'listegames'],
-    usage: '/games [jeu]',
-    cooldown: 3,
-    enabled: true,
-  },
-  {
-    name: 'pokemon',
-    description: 'Affiche les informations d’un Pokémon via PokéAPI.',
-    category: 'games',
-    aliases: ['poke'],
-    usage: '/pokemon <nom>',
-    cooldown: 5,
-    enabled: true,
-  },
-  {
-    name: 'fortnite',
-    description: 'Shop, actualités et stats Fortnite.',
-    category: 'games',
-    aliases: ['fn'],
-    usage: '/fortnite <shop|news|stats>',
-    cooldown: 10,
-    enabled: true,
-  },
-  {
-    name: 'twitch',
-    description: 'Affiche le statut d’une chaîne Twitch.',
-    category: 'twitch',
-    aliases: ['live'],
-    usage: '/twitch <channel>',
-    cooldown: 5,
-    enabled: true,
-  },
-  {
-    name: 'profil',
-    description: 'Affiche ou met à jour le profil Discord du membre.',
-    category: 'utility',
-    aliases: ['profile'],
-    usage: '/profil',
-    cooldown: 5,
-    enabled: true,
-  },
-]
+// Une seule source de vérité : le catalogue généré depuis les
+// SlashCommandBuilder réels du bot (`pnpm cms:catalog`).
+const SEED_COMMANDS: SeedDoc[] = commandCatalog.commands.map((command) => ({
+  name: command.name,
+  description: command.description,
+  descriptionEn: command.descriptionEn,
+  category: command.category,
+  aliases: command.aliases,
+  usage: command.usage,
+  examples: command.examples.map((example) => ({ example })),
+  cooldown: command.cooldown,
+  permissions: command.permissions,
+  enabled: command.enabled,
+  adminOnly: command.adminOnly,
+  options: command.options,
+}))
 
 async function upsertUser(payload: any) {
   const found = await payload.find({
@@ -251,8 +224,13 @@ async function seedSettings(payload: any) {
       botName: 'iamfabriceg Bot',
       description: 'Bot Discord multijeux avec catalogue Payload CMS.',
       version: '1.0.0',
-      publicUrl: process.env.PUBLIC_URL || 'http://localhost:3001',
+      publicUrl: process.env.PAYLOAD_PUBLIC_URL || process.env.PUBLIC_URL || 'http://localhost:3001',
+      discordInvite: DISCORD_INVITE,
       maintenanceMode: false,
+      socialLinks: [
+        { label: 'GitHub', url: 'https://github.com/fabricegeib/iamfabriceg-bot-discord' },
+        { label: 'Twitch', url: 'https://www.twitch.tv/iamfabriceg' },
+      ],
       features: {
         games: true,
         pokemon: true,

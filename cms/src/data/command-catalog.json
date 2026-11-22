@@ -1,0 +1,716 @@
+{
+  "generatedAt": "2026-11-22T02:44:41.573Z",
+  "source": "src/commands/**/*.js",
+  "count": 18,
+  "commands": [
+    {
+      "name": "deals",
+      "description": "Affiche bons plans, jeux gratuits et giveaways. Ex. : /deals source:free",
+      "descriptionEn": "Show game deals, free games and giveaways",
+      "category": "games",
+      "aliases": [],
+      "usage": "/deals source:free",
+      "examples": [
+        "/deals source:free",
+        "/deals source:steam"
+      ],
+      "cooldown": 5000,
+      "permissions": [],
+      "adminOnly": false,
+      "enabled": true,
+      "options": [
+        {
+          "name": "source",
+          "description": "Type d'offre (ex. : free)",
+          "descriptionEn": "Offer type (e.g. free)",
+          "type": "string",
+          "required": false,
+          "choices": [
+            {
+              "name": "Bons plans Steam",
+              "nameFr": "Bons plans Steam",
+              "value": "deals"
+            },
+            {
+              "name": "Jeux gratuits",
+              "nameFr": "Jeux gratuits",
+              "value": "free"
+            },
+            {
+              "name": "Giveaways",
+              "nameFr": "Giveaways",
+              "value": "giveaways"
+            }
+          ],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "fortnite",
+      "description": "Boutique, actus et stats Fortnite. Ex. : /fortnite shop",
+      "descriptionEn": "Fortnite shop, news and player stats",
+      "category": "games",
+      "aliases": [],
+      "usage": "/fortnite shop",
+      "examples": [
+        "/fortnite shop",
+        "/fortnite news mode:br",
+        "/fortnite stats joueur:iamfabriceg periode:lifetime"
+      ],
+      "cooldown": 4000,
+      "permissions": [],
+      "adminOnly": false,
+      "enabled": true,
+      "options": [
+        {
+          "name": "shop",
+          "description": "Boutique actuelle (ex. : /fortnite shop)",
+          "descriptionEn": "Current item shop (e.g. /fortnite shop)",
+          "type": "subcommand",
+          "required": false,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        },
+        {
+          "name": "news",
+          "description": "Actualités du jeu (ex. : /fortnite news mode:br)",
+          "descriptionEn": "Latest game news (e.g. /fortnite news mode:br)",
+          "type": "subcommand",
+          "required": false,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": [
+            {
+              "name": "mode",
+              "description": "Mode de jeu (ex. : br)",
+              "descriptionEn": "Game mode (e.g. br)",
+              "type": "string",
+              "required": true,
+              "choices": [
+                {
+                  "name": "Battle Royale",
+                  "nameFr": "Battle Royale",
+                  "value": "br"
+                },
+                {
+                  "name": "Save the World",
+                  "nameFr": "Save the World",
+                  "value": "stw"
+                },
+                {
+                  "name": "Creative",
+                  "nameFr": "Creative",
+                  "value": "creative"
+                }
+              ],
+              "minValue": null,
+              "maxValue": null,
+              "options": []
+            }
+          ]
+        },
+        {
+          "name": "stats",
+          "description": "Stats d'un joueur (ex. : /fortnite stats joueur:iamfabriceg)",
+          "descriptionEn": "Stats d'un joueur (ex. : /fortnite stats joueur:iamfabriceg)",
+          "type": "subcommand",
+          "required": false,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": [
+            {
+              "name": "joueur",
+              "description": "Pseudo du joueur (ex. : iamfabriceg)",
+              "descriptionEn": "Pseudo du joueur (ex. : iamfabriceg)",
+              "type": "string",
+              "required": true,
+              "choices": [],
+              "minValue": null,
+              "maxValue": null,
+              "options": []
+            },
+            {
+              "name": "compte",
+              "description": "Plateforme du compte (défaut : Epic)",
+              "descriptionEn": "Account platform (default: Epic)",
+              "type": "string",
+              "required": false,
+              "choices": [
+                {
+                  "name": "Epic",
+                  "nameFr": "Epic",
+                  "value": "epic"
+                },
+                {
+                  "name": "PlayStation",
+                  "nameFr": "PlayStation",
+                  "value": "psn"
+                },
+                {
+                  "name": "Xbox",
+                  "nameFr": "Xbox",
+                  "value": "xbl"
+                }
+              ],
+              "minValue": null,
+              "maxValue": null,
+              "options": []
+            },
+            {
+              "name": "periode",
+              "description": "Saison ou total (défaut : saison, repli auto sur total)",
+              "descriptionEn": "Season or lifetime (default: season)",
+              "type": "string",
+              "required": false,
+              "choices": [
+                {
+                  "name": "Saison en cours",
+                  "nameFr": "Saison en cours",
+                  "value": "season"
+                },
+                {
+                  "name": "Depuis le début (total)",
+                  "nameFr": "Depuis le début (total)",
+                  "value": "lifetime"
+                }
+              ],
+              "minValue": null,
+              "maxValue": null,
+              "options": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "games",
+      "description": "Catalogue des jeux du serveur. Ex. : /games info jeu:fortnite",
+      "descriptionEn": "Browse the server game catalog",
+      "category": "games",
+      "aliases": [],
+      "usage": "/games list",
+      "examples": [
+        "/games list",
+        "/games info jeu:fortnite",
+        "/games roles"
+      ],
+      "cooldown": 2000,
+      "permissions": [],
+      "adminOnly": false,
+      "enabled": true,
+      "options": [
+        {
+          "name": "list",
+          "description": "Affiche tous les jeux (ex. : /games list)",
+          "descriptionEn": "List all tracked games (e.g. /games list)",
+          "type": "subcommand",
+          "required": false,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        },
+        {
+          "name": "info",
+          "description": "Fiche détaillée d'un jeu (ex. : /games info jeu:fortnite)",
+          "descriptionEn": "Show a game fact sheet (e.g. /games info jeu:fortnite)",
+          "type": "subcommand",
+          "required": false,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": [
+            {
+              "name": "jeu",
+              "description": "Nom du jeu (ex. : Fortnite)",
+              "descriptionEn": "Game name (e.g. Fortnite)",
+              "type": "string",
+              "required": true,
+              "choices": [],
+              "minValue": null,
+              "maxValue": null,
+              "options": []
+            }
+          ]
+        },
+        {
+          "name": "roles",
+          "description": "Liste des rôles de jeu (ex. : /games roles)",
+          "descriptionEn": "List game roles (e.g. /games roles)",
+          "type": "subcommand",
+          "required": false,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "help",
+      "description": "Affiche toutes les commandes, options et exemples d'utilisation. Ex. : /help",
+      "descriptionEn": "List all commands, options and usage examples",
+      "category": "info",
+      "aliases": [],
+      "usage": "/help",
+      "examples": [
+        "/help",
+        "/help commande:fortnite"
+      ],
+      "cooldown": 2000,
+      "permissions": [],
+      "adminOnly": false,
+      "enabled": true,
+      "options": [
+        {
+          "name": "commande",
+          "description": "Affiche l'aide d'une commande (ex. : fortnite)",
+          "descriptionEn": "Show help for one command (e.g. fortnite)",
+          "type": "string",
+          "required": false,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "kick",
+      "description": "Expulse un membre du serveur. Ex. : /kick membre:@user raison:spam",
+      "descriptionEn": "Kick a member from the server",
+      "category": "moderation",
+      "aliases": [],
+      "usage": "/kick membre:@user raison:spam",
+      "examples": [
+        "/kick membre:@user raison:spam"
+      ],
+      "cooldown": 0,
+      "permissions": [
+        "KickMembers"
+      ],
+      "adminOnly": false,
+      "enabled": true,
+      "options": [
+        {
+          "name": "membre",
+          "description": "Membre à expulser (ex. : @user)",
+          "descriptionEn": "Member to kick (e.g. @user)",
+          "type": "user",
+          "required": true,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        },
+        {
+          "name": "raison",
+          "description": "Motif de l'expulsion (ex. : spam)",
+          "descriptionEn": "Kick reason (e.g. spam)",
+          "type": "string",
+          "required": false,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "mute",
+      "description": "Met un membre en timeout. Ex. : /mute membre:@user minutes:10 raison:spam",
+      "descriptionEn": "Timeout a member for N minutes",
+      "category": "moderation",
+      "aliases": [],
+      "usage": "/mute membre:@user minutes:10 raison:spam",
+      "examples": [
+        "/mute membre:@user minutes:10 raison:spam"
+      ],
+      "cooldown": 0,
+      "permissions": [
+        "ModerateMembers"
+      ],
+      "adminOnly": false,
+      "enabled": true,
+      "options": [
+        {
+          "name": "membre",
+          "description": "Membre à réduire au silence (ex. : @user)",
+          "descriptionEn": "Member to timeout (e.g. @user)",
+          "type": "user",
+          "required": true,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        },
+        {
+          "name": "minutes",
+          "description": "Durée en minutes (ex. : 10, max 10080)",
+          "descriptionEn": "Duration in minutes (e.g. 10, max 10080)",
+          "type": "integer",
+          "required": true,
+          "choices": [],
+          "minValue": 1,
+          "maxValue": 10080,
+          "options": []
+        },
+        {
+          "name": "raison",
+          "description": "Motif du timeout (ex. : spam)",
+          "descriptionEn": "Timeout reason (e.g. spam)",
+          "type": "string",
+          "required": false,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "options-info",
+      "description": "Renvoie le texte saisi. Ex. : /options-info input:salut",
+      "descriptionEn": "Echo the text you provide",
+      "category": "info",
+      "aliases": [],
+      "usage": "/options-info input:salut",
+      "examples": [
+        "/options-info input:salut"
+      ],
+      "cooldown": 0,
+      "permissions": [],
+      "adminOnly": false,
+      "enabled": true,
+      "options": [
+        {
+          "name": "input",
+          "description": "Texte à renvoyer (ex. : salut)",
+          "descriptionEn": "Text to echo (e.g. salut)",
+          "type": "string",
+          "required": false,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "permissions",
+      "description": "Affiche les permissions du bot et son lien d'invitation. Ex. : /permissions",
+      "descriptionEn": "Show bot permissions and invite link",
+      "category": "info",
+      "aliases": [],
+      "usage": "/permissions",
+      "examples": [
+        "/permissions"
+      ],
+      "cooldown": 0,
+      "permissions": [],
+      "adminOnly": false,
+      "enabled": true,
+      "options": []
+    },
+    {
+      "name": "ping",
+      "description": "Vérifie la latence du bot. Ex. : /ping",
+      "descriptionEn": "Check bot latency",
+      "category": "info",
+      "aliases": [],
+      "usage": "/ping",
+      "examples": [
+        "/ping"
+      ],
+      "cooldown": 0,
+      "permissions": [],
+      "adminOnly": false,
+      "enabled": true,
+      "options": []
+    },
+    {
+      "name": "pokemon",
+      "description": "Affiche la fiche d'un Pokémon. Ex. : /pokemon nom:pikachu",
+      "descriptionEn": "Show a Pokémon fact sheet",
+      "category": "games",
+      "aliases": [],
+      "usage": "/pokemon nom:pikachu",
+      "examples": [
+        "/pokemon nom:pikachu",
+        "/pokemon nom:25"
+      ],
+      "cooldown": 2000,
+      "permissions": [],
+      "adminOnly": false,
+      "enabled": true,
+      "options": [
+        {
+          "name": "nom",
+          "description": "Nom ou numéro du Pokémon (aléatoire si omis)",
+          "descriptionEn": "Nom ou numéro du Pokémon (aléatoire si omis)",
+          "type": "string",
+          "required": false,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "profil",
+      "description": "Lie ou met à jour votre profil CMS. Ex. : /profil pseudo:Fabrice",
+      "descriptionEn": "Link or update your CMS profile",
+      "category": "cms",
+      "aliases": [],
+      "usage": "/profil pseudo:Fabrice",
+      "examples": [
+        "/profil pseudo:Fabrice"
+      ],
+      "cooldown": 10000,
+      "permissions": [],
+      "adminOnly": false,
+      "enabled": true,
+      "options": [
+        {
+          "name": "pseudo",
+          "description": "Votre pseudo sur le site (ex. : Fabrice)",
+          "descriptionEn": "Your site username (e.g. Fabrice)",
+          "type": "string",
+          "required": false,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "prune",
+      "description": "Supprime des messages du salon. Ex. : /prune nombre:10",
+      "descriptionEn": "Delete several messages in this channel",
+      "category": "moderation",
+      "aliases": [],
+      "usage": "/prune nombre:10",
+      "examples": [
+        "/prune nombre:10"
+      ],
+      "cooldown": 0,
+      "permissions": [
+        "ManageMessages"
+      ],
+      "adminOnly": false,
+      "enabled": true,
+      "options": [
+        {
+          "name": "nombre",
+          "description": "Nombre de messages à supprimer (1-100)",
+          "descriptionEn": "Nombre de messages à supprimer (1-100)",
+          "type": "integer",
+          "required": true,
+          "choices": [],
+          "minValue": 1,
+          "maxValue": 100,
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "riot",
+      "description": "Affiche un profil League of Legends. Ex. : /riot invocateur:iamfabriceg",
+      "descriptionEn": "Show a League of Legends profile",
+      "category": "games",
+      "aliases": [],
+      "usage": "/riot invocateur:iamfabriceg region:euw1",
+      "examples": [
+        "/riot invocateur:iamfabriceg region:euw1"
+      ],
+      "cooldown": 4000,
+      "permissions": [],
+      "adminOnly": false,
+      "enabled": true,
+      "options": [
+        {
+          "name": "invocateur",
+          "description": "Nom d'invocateur (ex. : iamfabriceg)",
+          "descriptionEn": "Summoner name (e.g. iamfabriceg)",
+          "type": "string",
+          "required": true,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        },
+        {
+          "name": "region",
+          "description": "Région (défaut : euw1)",
+          "descriptionEn": "Region (default: euw1)",
+          "type": "string",
+          "required": false,
+          "choices": [
+            {
+              "name": "EUW",
+              "nameFr": "EUW",
+              "value": "euw1"
+            },
+            {
+              "name": "EUN",
+              "nameFr": "EUN",
+              "value": "eun1"
+            },
+            {
+              "name": "NA",
+              "nameFr": "NA",
+              "value": "na1"
+            },
+            {
+              "name": "BR",
+              "nameFr": "BR",
+              "value": "br1"
+            },
+            {
+              "name": "JP",
+              "nameFr": "JP",
+              "value": "jp1"
+            },
+            {
+              "name": "KR",
+              "nameFr": "KR",
+              "value": "kr"
+            }
+          ],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "status",
+      "description": "Affiche l'état du bot et des intégrations. Ex. : /status",
+      "descriptionEn": "Show bot and integrations status",
+      "category": "info",
+      "aliases": [],
+      "usage": "/status",
+      "examples": [
+        "/status"
+      ],
+      "cooldown": 0,
+      "permissions": [],
+      "adminOnly": false,
+      "enabled": true,
+      "options": []
+    },
+    {
+      "name": "steam",
+      "description": "Affiche un profil Steam et ses jeux. Ex. : /steam identifiant:76561198000000000",
+      "descriptionEn": "Show a Steam profile and owned games",
+      "category": "games",
+      "aliases": [],
+      "usage": "/steam identifiant:76561198000000000",
+      "examples": [
+        "/steam identifiant:76561198000000000"
+      ],
+      "cooldown": 4000,
+      "permissions": [],
+      "adminOnly": false,
+      "enabled": true,
+      "options": [
+        {
+          "name": "identifiant",
+          "description": "SteamID ou URL personnalisée (ex. : 76561198000000000)",
+          "descriptionEn": "SteamID or custom URL (e.g. 76561198000000000)",
+          "type": "string",
+          "required": true,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "sync",
+      "description": "Synchronise les jeux depuis Payload CMS. Ex. : /sync",
+      "descriptionEn": "Sync games from Payload CMS",
+      "category": "cms",
+      "aliases": [],
+      "usage": "/sync",
+      "examples": [
+        "/sync"
+      ],
+      "cooldown": 30000,
+      "permissions": [
+        "Administrator"
+      ],
+      "adminOnly": true,
+      "enabled": true,
+      "options": []
+    },
+    {
+      "name": "twitch",
+      "description": "Affiche le statut d'une chaîne Twitch. Ex. : /twitch chaine:iamfabriceg",
+      "descriptionEn": "Check a Twitch channel status",
+      "category": "games",
+      "aliases": [],
+      "usage": "/twitch chaine:iamfabriceg",
+      "examples": [
+        "/twitch chaine:iamfabriceg"
+      ],
+      "cooldown": 4000,
+      "permissions": [],
+      "adminOnly": false,
+      "enabled": true,
+      "options": [
+        {
+          "name": "chaine",
+          "description": "Nom de la chaîne (ex. : iamfabriceg)",
+          "descriptionEn": "Channel name (e.g. iamfabriceg)",
+          "type": "string",
+          "required": true,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        }
+      ]
+    },
+    {
+      "name": "unmute",
+      "description": "Lève le timeout d'un membre. Ex. : /unmute membre:@user",
+      "descriptionEn": "Remove a member's timeout",
+      "category": "moderation",
+      "aliases": [],
+      "usage": "/unmute membre:@user",
+      "examples": [
+        "/unmute membre:@user"
+      ],
+      "cooldown": 0,
+      "permissions": [
+        "ModerateMembers"
+      ],
+      "adminOnly": false,
+      "enabled": true,
+      "options": [
+        {
+          "name": "membre",
+          "description": "Membre à rétablir (ex. : @user)",
+          "descriptionEn": "Member to unmute (e.g. @user)",
+          "type": "user",
+          "required": true,
+          "choices": [],
+          "minValue": null,
+          "maxValue": null,
+          "options": []
+        }
+      ]
+    }
+  ]
+}

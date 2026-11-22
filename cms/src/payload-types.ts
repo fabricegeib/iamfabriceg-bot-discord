@@ -207,6 +207,7 @@ export interface Command {
   id: string;
   name: string;
   description?: string | null;
+  descriptionEn?: string | null;
   category?: string | null;
   aliases?: string[] | null;
   usage?: string | null;
@@ -577,6 +578,7 @@ export interface GamesSelect<T extends boolean = true> {
 export interface CommandsSelect<T extends boolean = true> {
   name?: T;
   description?: T;
+  descriptionEn?: T;
   category?: T;
   aliases?: T;
   usage?: T;

@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdmin, isAdminOrEditor, publicRead } from '../access'
+import { isAdmin, isAdminOrEditor } from '../access'
 import { notifyBot } from '../hooks/notify-bot'
 
 export const Events: CollectionConfig = {
@@ -11,7 +11,8 @@ export const Events: CollectionConfig = {
   },
   timestamps: true,
   access: {
-    read: publicRead,
+    // Les événements ne sont pas rendus sur le front public.
+    read: isAdminOrEditor,
     create: isAdminOrEditor,
     update: isAdminOrEditor,
     delete: isAdmin,
