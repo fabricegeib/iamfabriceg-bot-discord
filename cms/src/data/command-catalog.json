@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-22T02:44:41.573Z",
+  "generatedAt": "2026-11-22T02:51:05.886Z",
   "source": "src/commands/**/*.js",
   "count": 18,
   "commands": [
@@ -12,7 +12,8 @@
       "usage": "/deals source:free",
       "examples": [
         "/deals source:free",
-        "/deals source:steam"
+        "/deals source:deals",
+        "/deals source:giveaways"
       ],
       "cooldown": 5000,
       "permissions": [],

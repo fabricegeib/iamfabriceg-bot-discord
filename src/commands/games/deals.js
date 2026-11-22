@@ -20,7 +20,7 @@ module.exports = {
 
   cooldown: 5000,
 
-  examples: ["/deals source:free","/deals source:steam"],
+  examples: ["/deals source:free","/deals source:deals","/deals source:giveaways"],
 
   async execute(interaction) {
     await interaction.deferReply();
