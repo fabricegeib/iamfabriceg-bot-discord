@@ -84,6 +84,15 @@ docker inspect --format '{{index .RepoDigests 0}}' "$REG/iamfabriceg-bot:$TAG"
 docker inspect --format '{{index .RepoDigests 0}}' "$REG/iamfabriceg-bot-cms:$TAG"
 ```
 
+**Publication du 2026-11-22 — terminée et vérifiée** (`1.1.0` et `latest` pointent sur les mêmes digests) :
+
+| Image | Tag | Digest |
+|---|---|---|
+| `registry.fabricegeib.com/iamfabriceg-bot` | `1.1.0`, `latest` | `sha256:7cb5bb8bcd47559f653b5c938b9abe80e49f29e55af38701cd2248a0d6a489f4` |
+| `registry.fabricegeib.com/iamfabriceg-bot-cms` | `1.1.0`, `latest` | `sha256:b181c774b5e77b4cdd452109aa52b04dcf53d54a94e5530d78dc94aedc08e135` |
+
+Pour un déploiement reproductible, remplacer le tag par l’un de ces digests dans la commande `docker pull` / `docker run`.
+
 ---
 
 ## 4. Local — exporter MongoDB
@@ -279,8 +288,11 @@ IMAGE_TAG=1.1.0 docker compose -f docker-compose.prod.yml -f docker-compose.vps.
 Pour un déploiement par digest (recommandé) :
 
 ```bash
-IMAGE=registry.fabricegeib.com/iamfabriceg-bot@sha256:<digest>
+IMAGE=registry.fabricegeib.com/iamfabriceg-bot@sha256:7cb5bb8bcd47559f653b5c938b9abe80e49f29e55af38701cd2248a0d6a489f4
 docker pull "$IMAGE"
+# et, pour le CMS :
+IMAGE_CMS=registry.fabricegeib.com/iamfabriceg-bot-cms@sha256:b181c774b5e77b4cdd452109aa52b04dcf53d54a94e5530d78dc94aedc08e135
+docker pull "$IMAGE_CMS"
 ```
 
 ---
