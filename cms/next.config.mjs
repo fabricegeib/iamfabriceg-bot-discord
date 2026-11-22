@@ -6,6 +6,9 @@ const dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Image de production minimale : Next trace les seules dépendances utilisées
+  // et génère un serveur autonome au lieu de copier tout node_modules.
+  output: 'standalone',
   reactStrictMode: true,
   devIndicators: false,
   turbopack: {

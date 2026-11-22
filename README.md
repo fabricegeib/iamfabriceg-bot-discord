@@ -102,10 +102,11 @@ corepack pnpm docker:prod
 docker compose -f docker-compose.prod.yml -f docker-compose.vps.yml up -d
 ```
 
-Images publiées : `registry.fabricegeib.com/iamfabriceg-bot:1.1.0` (bot) et
-`registry.fabricegeib.com/iamfabriceg-bot-cms:1.1.0` (CMS + admin + front), construites depuis
-`Dockerfile` et `cms/Dockerfile`. Digests : bot `sha256:7cb5bb8b…a489f4`, CMS `sha256:b181c774…8e135`.
-Le bot attend que le CMS et MongoDB soient `healthy`.
+Images publiées (optimisées) : `registry.fabricegeib.com/iamfabriceg-bot:1.1.0-slim` (bot,
+203 Mo) et `registry.fabricegeib.com/iamfabriceg-bot-cms:1.1.0-slim` (CMS + admin + front,
+306 Mo), construites depuis `Dockerfile` et `cms/Dockerfile`. Digests : bot
+`sha256:ca9e4f5d…847cd1`, CMS `sha256:ca7c312e…ad179c`. L’ancien tag `1.1.0` reste publié pour
+le retour arrière. Le bot attend que le CMS et MongoDB soient `healthy`.
 Procédure complète (audit, clés API, SSH, build/push, export MongoDB, Docker Compose,
 Nginx Proxy Manager, vérifications, rollback) : [`docs/DEPLOY-VPS.md`](./docs/DEPLOY-VPS.md).
 Arrêt : `corepack pnpm docker:prod:down`.

@@ -3,8 +3,8 @@
 Guide opérationnel unique pour passer **iamfabriceg Bot** (bot Discord + CMS/admin + front public)
 du poste de développement au VPS, via **SSH**, **Docker Compose** et **Nginx Proxy Manager**.
 
-> Dernière vérification complète : **2026-11-22** — version **1.1.0**, branche
-> `build/docker-pnpm-payload-admin`, commit `3f4a61b`.
+> Dernière vérification complète : **2026-11-22** — version **1.1.0** (images optimisées
+> `1.1.0-slim`), branche `build/docker-pnpm-payload-admin`, commit `58a32e0`.
 
 ---
 
@@ -14,7 +14,7 @@ du poste de développement au VPS, via **SSH**, **Docker Compose** et **Nginx Pr
 |---|---|---|
 | 1 | Local | Vérifier tests / lint / TypeScript / santé des conteneurs (§2) |
 | 2 | Local | Compléter les clés API souhaitées dans `.env` (§3) |
-| 3 | Local | Construire et pousser les deux images (§4) — **déjà fait pour 1.1.0** |
+| 3 | Local | Construire et pousser les deux images (§4) — **déjà fait pour `1.1.0-slim`** |
 | 4 | Local | Exporter MongoDB (§5) — **archive déjà produite** |
 | 5 | VPS | Se connecter en SSH, copier Compose + `.env` + archive (§6) |
 | 6 | VPS | Restaurer MongoDB (§7) |
@@ -30,8 +30,8 @@ du poste de développement au VPS, via **SSH**, **Docker Compose** et **Nginx Pr
 | Élément | Valeur |
 |---|---|
 | Registre Docker | `registry.fabricegeib.com` |
-| Image bot | `registry.fabricegeib.com/iamfabriceg-bot:1.1.0` |
-| Image CMS / front / admin | `registry.fabricegeib.com/iamfabriceg-bot-cms:1.1.0` |
+| Image bot (optimisée) | `registry.fabricegeib.com/iamfabriceg-bot:1.1.0-slim` — **203 Mo** |
+| Image CMS / front / admin (optimisée) | `registry.fabricegeib.com/iamfabriceg-bot-cms:1.1.0-slim` — **306 Mo** |
 | URL publique | `https://bot.iamfabriceg.xyz` |
 | Variable de domaine | `DEPLOY_URL` (dans le Compose prod, valeur par défaut ci-dessus) |
 | Reverse proxy | Nginx Proxy Manager, réseau Docker externe `nginx-proxy-manager` |
@@ -221,7 +221,7 @@ du réseau Docker : aucune exposition publique supplémentaire n’est requise p
 
 ```powershell
 $REG = "registry.fabricegeib.com"
-$TAG = "1.1.0"
+$TAG = "1.1.0-slim"   # image optimisée ; le tag 1.1.0 est conservé pour le rollback
 
 docker build -f Dockerfile     -t "$REG/iamfabriceg-bot:$TAG"     -t "$REG/iamfabriceg-bot:latest" .
 docker build -f cms/Dockerfile -t "$REG/iamfabriceg-bot-cms:$TAG" -t "$REG/iamfabriceg-bot-cms:latest" .
@@ -234,12 +234,28 @@ docker inspect --format '{{index .RepoDigests 0}}' "$REG/iamfabriceg-bot:$TAG"
 docker inspect --format '{{index .RepoDigests 0}}' "$REG/iamfabriceg-bot-cms:$TAG"
 ```
 
-**Publication du 2026-11-22 terminée** (`1.1.0` et `latest` pointent sur les mêmes digests) :
+**Publication du 2026-11-22 terminée.** Les tags `1.1.0-slim` et `latest` pointent sur les images
+optimisées ; l’ancien tag `1.1.0` est conservé tel quel pour le retour arrière.
 
-| Image | Digest |
-|---|---|
-| `registry.fabricegeib.com/iamfabriceg-bot` | `sha256:7cb5bb8bcd47559f653b5c938b9abe80e49f29e55af38701cd2248a0d6a489f4` |
-| `registry.fabricegeib.com/iamfabriceg-bot-cms` | `sha256:b181c774b5e77b4cdd452109aa52b04dcf53d54a94e5530d78dc94aedc08e135` |
+| Image | Tag | Digest | Taille |
+|---|---|---|---|
+| `registry.fabricegeib.com/iamfabriceg-bot` | `1.1.0-slim`, `latest` | `sha256:ca9e4f5dbb115808ef34ecf6bcab7e3e6ec399ffede01d867d064632dc847cd1` | **203 Mo** |
+| `registry.fabricegeib.com/iamfabriceg-bot-cms` | `1.1.0-slim`, `latest` | `sha256:ca7c312e6cc5e3de0b1baa9391a24d92aac500c9e3857291fbce273837ad179c` | **306 Mo** |
+| `registry.fabricegeib.com/iamfabriceg-bot` | `1.1.0` (rollback) | `sha256:7cb5bb8bcd47559f653b5c938b9abe80e49f29e55af38701cd2248a0d6a489f4` | 235 Mo |
+| `registry.fabricegeib.com/iamfabriceg-bot-cms` | `1.1.0` (rollback) | `sha256:b181c774b5e77b4cdd452109aa52b04dcf53d54a94e5530d78dc94aedc08e135` | 2,41 Go |
+
+**Pourquoi l’ancienne image CMS faisait 2,41 Go** : le `Dockerfile` copiait `node_modules`
+complet (1,1 Go, dépendances de dev incluses — deux compilateurs SWC ~190 Mo, deux `libvips`
+~72 Mo, Monaco 106 Mo, Next 211 Mo), puis la couche `chown -R node:node /app` dupliquait tout
+(1,11 Go de plus), auxquels s’ajoutaient 156 Mo de `.next/cache` et 29 Mo de pnpm dans le runtime.
+
+**Optimisation** : `output: 'standalone'` (Next ne trace que les dépendances réellement
+utilisées, ~116 Mo), aucune couche `chown` récursive, ni pnpm, ni sources TypeScript, ni cache
+dans le runtime. Le seed est compilé au build en `cms/seed.mjs` (8,7 Mo) et lancé avec
+`node cms/seed.mjs` — plus besoin de pnpm dans l’image. Résultat : `/app` passe de 1,3 Go à
+128,6 Mo, l’image de **2,41 Go à 306 Mo** (−87 %) pour le CMS et de **235 Mo à 203 Mo** pour le
+bot. Les images ont été validées (healthz, summary, admin, front, `/search`, stats et POST
+usage authentifiés, seed sur base jetable) avant publication.
 
 ---
 
@@ -426,15 +442,15 @@ curl -fsS https://bot.iamfabriceg.xyz/ | grep -o 'iamfabriceg Bot' | head -1
 IMAGE_TAG=1.1.1 docker compose -f docker-compose.prod.yml -f docker-compose.vps.yml pull
 IMAGE_TAG=1.1.1 docker compose -f docker-compose.prod.yml -f docker-compose.vps.yml up -d
 
-# Retour arrière
+# Retour arrière : ancien tag 1.1.0 conservé dans le registre (images non optimisées)
 IMAGE_TAG=1.1.0 docker compose -f docker-compose.prod.yml -f docker-compose.vps.yml up -d
 ```
 
-Pour un déploiement par digest (recommandé) :
+Pour un déploiement par digest (recommandé) — images optimisées `1.1.0-slim` :
 
 ```bash
-docker pull registry.fabricegeib.com/iamfabriceg-bot@sha256:7cb5bb8bcd47559f653b5c938b9abe80e49f29e55af38701cd2248a0d6a489f4
-docker pull registry.fabricegeib.com/iamfabriceg-bot-cms@sha256:b181c774b5e77b4cdd452109aa52b04dcf53d54a94e5530d78dc94aedc08e135
+docker pull registry.fabricegeib.com/iamfabriceg-bot@sha256:ca9e4f5dbb115808ef34ecf6bcab7e3e6ec399ffede01d867d064632dc847cd1
+docker pull registry.fabricegeib.com/iamfabriceg-bot-cms@sha256:ca7c312e6cc5e3de0b1baa9391a24d92aac500c9e3857291fbce273837ad179c
 ```
 
 ---
@@ -453,7 +469,7 @@ docker pull registry.fabricegeib.com/iamfabriceg-bot-cms@sha256:b181c774b5e77b4c
 | Search 401/403 | `PAYLOAD_API_KEY` changé | Recopier la clé locale, `up -d --force-recreate bot cms` |
 | Commande externe « désactivé : variable … non configurée » | Clé absente **ou** `.env` modifié sans recréation du conteneur (Docker lit `env_file` à la création et `getEnv()` met la config en cache au démarrage) | Vérifier la clé dans `.env`, puis `docker compose -f docker-compose.dev.yml up -d --force-recreate bot` (sur le VPS : avec les fichiers prod) |
 | `/twitch` dit « non configuré » alors que la clé est dans `.env` | Conteneur bot démarré avant l’ajout des clés | Recréer le bot ; vérifier avec `docker exec iamfabriceg-bot-discord node -e 'require("./src/services/providers/twitch").getAppToken().then(t=>console.log("OK",t.length))'` |
-| Palette ne s’ouvre qu’au 2ᵉ tap sur iPhone | Ancienne version de l’image | Vérifier le digest `b181c774…` de l’image CMS |
+| Palette ne s’ouvre qu’au 2ᵉ tap sur iPhone | Ancienne version de l’image | Vérifier le digest `ca7c312e…` de l’image CMS (`1.1.0-slim`) |
 | Cercles rouges / safe areas | iOS met les méta en cache | Retirer puis rajouter la web app de l’écran d’accueil |
 
 ---

@@ -23,7 +23,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ${REGISTRY:-registry.fabricegeib.com}/iamfabriceg-bot:${IMAGE_TAG:-1.1.0}
+    image: ${REGISTRY:-registry.fabricegeib.com}/iamfabriceg-bot:${IMAGE_TAG:-1.1.0-slim}
     # Sur le VPS, tirer l'image du registre ; `--build` (docker:prod local) force la construction.
     pull_policy: if_not_present
     container_name: iamfabriceg-bot-discord
@@ -57,7 +57,7 @@ services:
   # Usage ponctuel :
   #   docker compose -f docker-compose.prod.yml -f docker-compose.vps.yml --profile tools run --rm cms-seed
   cms-seed:
-    image: ${REGISTRY:-registry.fabricegeib.com}/iamfabriceg-bot-cms:${IMAGE_TAG:-1.1.0}
+    image: ${REGISTRY:-registry.fabricegeib.com}/iamfabriceg-bot-cms:${IMAGE_TAG:-1.1.0-slim}
     container_name: iamfabriceg-bot-cms-seed
     profiles: ["tools"]
     depends_on:
@@ -74,14 +74,15 @@ services:
       PAYLOAD_PUBLIC_URL: ${DEPLOY_URL:-https://bot.iamfabriceg.xyz}
       PUBLIC_URL: ${DEPLOY_URL:-https://bot.iamfabriceg.xyz}
       BOT_WEBHOOK_URL: http://bot:3000
-    command: ["pnpm", "--filter", "cms", "seed"]
+    # L'image runtime ne contient pas pnpm : le seed y est compilé en JS au build.
+    command: ["node", "cms/seed.mjs"]
     restart: "no"
 
   cms:
     build:
       context: .
       dockerfile: cms/Dockerfile
-    image: ${REGISTRY:-registry.fabricegeib.com}/iamfabriceg-bot-cms:${IMAGE_TAG:-1.1.0}
+    image: ${REGISTRY:-registry.fabricegeib.com}/iamfabriceg-bot-cms:${IMAGE_TAG:-1.1.0-slim}
     # Sur le VPS, tirer l'image du registre ; `--build` (docker:prod local) force la construction.
     pull_policy: if_not_present
     container_name: iamfabriceg-bot-cms
