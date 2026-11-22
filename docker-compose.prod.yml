@@ -1,7 +1,9 @@
 name: iamfabriceg-bot
 
-# Production : images construites depuis les Dockerfiles, redémarrage automatique.
-# Démarrage : pnpm docker:prod  (ou docker compose -f docker-compose.prod.yml up -d --build)
+# Production : images tirées du registre privé, redémarrage automatique.
+# Sur le VPS, utiliser aussi le fichier d'override réseau :
+#   docker compose -f docker-compose.prod.yml -f docker-compose.vps.yml up -d
+# Voir docs/DEPLOY-VPS.md pour la procédure complète.
 
 services:
   mongo:
@@ -18,10 +20,7 @@ services:
       start_period: 10s
 
   bot:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: iamfabriceg/bot-discord:latest
+    image: ${REGISTRY:-registry.fabricegeib.com}/iamfabriceg-bot:${IMAGE_TAG:-1.1.0}
     container_name: iamfabriceg-bot-discord
     depends_on:
       mongo:
@@ -35,10 +34,12 @@ services:
       PORT: "3000"
       DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
       PAYLOAD_URL: http://cms:3001
-      PAYLOAD_PUBLIC_URL: ${PAYLOAD_PUBLIC_URL:-http://localhost:3001}
+      PAYLOAD_PUBLIC_URL: ${PAYLOAD_PUBLIC_URL:-https://bot.iamfabriceg.xyz}
       BOT_WEBHOOK_URL: http://bot:3000
+      PUBLIC_URL: ${PUBLIC_URL:-https://bot.iamfabriceg.xyz}
     ports:
-      - "3012:3000"
+      # NPM atteint le conteneur via le réseau Docker ; ces ports restent locaux.
+      - "127.0.0.1:3012:3000"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/healthz"]
       interval: 30s
@@ -47,9 +48,10 @@ services:
       start_period: 20s
     restart: unless-stopped
 
-  # Usage ponctuel : docker compose -f docker-compose.prod.yml --profile tools run --rm cms-seed
+  # Usage ponctuel :
+  #   docker compose -f docker-compose.prod.yml -f docker-compose.vps.yml --profile tools run --rm cms-seed
   cms-seed:
-    image: iamfabriceg/bot-cms:latest
+    image: ${REGISTRY:-registry.fabricegeib.com}/iamfabriceg-bot-cms:${IMAGE_TAG:-1.1.0}
     container_name: iamfabriceg-bot-cms-seed
     profiles: ["tools"]
     depends_on:
@@ -63,16 +65,13 @@ services:
       CMS_PORT: "3001"
       DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
       PAYLOAD_URL: http://cms:3001
-      PAYLOAD_PUBLIC_URL: ${PAYLOAD_PUBLIC_URL:-http://localhost:3001}
+      PAYLOAD_PUBLIC_URL: ${PAYLOAD_PUBLIC_URL:-https://bot.iamfabriceg.xyz}
       BOT_WEBHOOK_URL: http://bot:3000
     command: ["pnpm", "--filter", "cms", "seed"]
     restart: "no"
 
   cms:
-    build:
-      context: .
-      dockerfile: cms/Dockerfile
-    image: iamfabriceg/bot-cms:latest
+    image: ${REGISTRY:-registry.fabricegeib.com}/iamfabriceg-bot-cms:${IMAGE_TAG:-1.1.0}
     container_name: iamfabriceg-bot-cms
     depends_on:
       mongo:
@@ -85,10 +84,10 @@ services:
       CMS_PORT: "3001"
       DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
       PAYLOAD_URL: http://cms:3001
-      PAYLOAD_PUBLIC_URL: ${PAYLOAD_PUBLIC_URL:-http://localhost:3001}
+      PAYLOAD_PUBLIC_URL: ${PAYLOAD_PUBLIC_URL:-https://bot.iamfabriceg.xyz}
       BOT_WEBHOOK_URL: http://bot:3000
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/api/bot/healthz"]
       interval: 30s
