@@ -1,4 +1,4 @@
-# PLAN DE MODERNISATION — iamfabriceg Discord Bot
+# PLAN DE MODERNISATION — iamfabriceg Bot (Discord)
 
 > Date : 2026-11-21  
 > État : **plan validé, prêt à exécuter**  
@@ -136,7 +136,7 @@ Ordre prévu : 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8. Chaque PR est autono
 - [x] Dependencies modernisées, paquets morts supprimés, `npm audit` = 0 vulnérabilité
 - [x] `node:26-alpine`, healthcheck, `Dockerfile` et `docker-compose.prod.yml`
 - [x] `eslint.config.js` (flat config) + Prettier + scripts `lint`, `format`, `test`
-- [x] CI GitHub Actions : `npm ci`, `lint`, `test`
+- [x] CI GitHub Actions : `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm test`
 - [x] README réécrit + `docs/PAYLOAD.md` + `docs/TWITCH.md`
 
 ### Phase 3 — Interactions (`BUG-3`, `BUG-4`)
@@ -179,7 +179,7 @@ Ordre prévu : 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8. Chaque PR est autono
 
 ### Phase 7 — Twitch (`FEAT-8`)
 
-- [x] Abonnements EventSub `stream.online` / `stream.offline` (`npm run twitch:subscribe`)
+- [x] Abonnements EventSub `stream.online` / `stream.offline` (`pnpm twitch:subscribe`)
 - [x] Callback HTTPS `PUBLIC_URL/webhooks/twitch` + challenge + HMAC
 - [x] Embeds d'alertes live / offline
 - [x] Commande `/twitch <channel>`
@@ -194,9 +194,9 @@ Ordre prévu : 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8. Chaque PR est autono
 
 ## Résultat des vérifications (22/11/2026)
 
-- `npm run lint` : **0 erreur, 0 warning**
-- `npm test` : **20 tests réussis**
-- `npm audit` : **0 vulnérabilité**
+- `pnpm lint` : **0 erreur, 0 warning**
+- `pnpm test` : **20 tests réussis**
+- Audit npm (avant migration) : **0 vulnérabilité**
 - Commandes chargées : **17** (toutes avec `data` + `execute`, JSON valide)
 - `--dry` local : serveur `/healthz` répond `200 {"ok":true,...}`
 
@@ -218,7 +218,7 @@ Ordre prévu : 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8. Chaque PR est autono
 
 ## 9. Définition de terminé
 
-- `npm ci && npm run lint && npm test` passe sur chaque branche.
+- `pnpm install --frozen-lockfile && pnpm lint && pnpm test` passe sur chaque branche.
 - Le bot démarre avec Node 26 et uniquement les variables `.env` documentées.
 - Toutes les commandes déployées répondent, y compris les boutons de rôles.
 - Aucune clé ni token dans le dépôt.
@@ -237,3 +237,65 @@ gh pr create --title "🔒 Sécurité : token, permissions et .env" --body "Voir
 ```
 
 Répéter avec les autres branches du tableau.
+
+---
+
+## 11. Extension Docker / pnpm / Payload CMS (23/11/2026)
+
+Branche : `build/docker-pnpm-payload-admin`, empilée sur `build/modernisation-2026` (PR #24).
+Nouvelle PR prévue avec `build/modernisation-2026` comme base afin de préserver la PR #24.
+
+### Décisions complémentaires
+
+| Sujet | Décision |
+|---|---|
+| Gestionnaire de paquets | **pnpm 10.15.0** via Corepack (workspace root + `cms/`) ; `package-lock.json` supprimé |
+| Docker | **dev et prod** : `bot`, `cms`, `mongo` ; code monté en dev, images construites en prod |
+| CMS | **Payload v3.94.1 + MongoDB 8**, admin complet et front public en lecture seule |
+| Admin CMS | Collections : users, games, commands, commandUsages, discordRoles, events, news, streamAlerts, webhookEvents, profiles, media + global `botSettings` |
+| Sécurité | Secrets uniquement dans `.env` ; webhooks signés HMAC ; clé API bot générée par seed |
+| Compatibilité | Bot reste CommonJS + discord.js 14 ; CMS est ESM/TypeScript (Next 16) |
+
+### État d'avancement
+
+- [x] `packageManager`, `pnpm-workspace.yaml`, scripts `cms:*` et `docker:*`
+- [x] `.env.example` complet (Discord, APIs, CMS, Docker, rôles Aniimo/GOALS)
+- [x] CI pnpm (`pnpm/action-setup`, `--frozen-lockfile`, build CMS)
+- [x] `Dockerfile` bot pnpm + `docker-compose.dev.yml` / `docker-compose.prod.yml` (bot + cms + mongo)
+- [x] `README.md` pnpm / Docker / CMS ; `docs/CMS.md`
+- [x] Webhook bot : accepte `x-payload-signature` (HMAC) **et** `x-webhook-secret`
+- [x] Scaffold CMS Payload : 11 collections, global `botSettings`, endpoints `/bot/*`, hooks signés, seed, admin et front public en lecture seule
+- [x] `corepack pnpm install` → `pnpm-lock.yaml` (workspace root + `cms`), `package-lock.json` supprimé
+- [x] `cms/Dockerfile` multi-stage et lint CMS natif (Next 16 flat config)
+- [x] Validations : `pnpm lint`, `pnpm test` (20/20), `pnpm --filter cms lint`, `pnpm --filter cms build`, `docker compose config` (dev + prod)
+- [x] Smoke tests HTTP : `/api/bot/healthz`, `/`, `/admin`, `/api/bot/summary`, `/api/games` (clé API), `/api/bot/profile` (401 sans clé)
+- [x] Test bout en bout du webhook : PATCH Payload → HMAC `x-payload-signature` → bot accepte (200) et rejette une signature invalide (401)
+- [ ] Commit, push et création de la nouvelle PR
+
+### Résultat des validations (23/11/2026)
+
+- `pnpm lint` : 0 erreur
+- `pnpm test` : 20/20
+- `pnpm --filter cms lint` : 0 erreur, 8 avertissements `no-explicit-any` (types Payload dynamiques)
+- `pnpm --filter cms build` : succès (routes `/`, `/admin/[[...segments]]`, `/api/[...slug]`)
+- `docker compose -f docker-compose.dev.yml config` et `...prod.yml config` : valides
+- Seed Payload : admin `bot@iamfabriceg.local`, clé API générée, 5 jeux et 5 commandes
+- Webhook : signature HMAC vérifiée côté bot, mauvaise signature rejetée en 401
+
+### Commandes de validation
+
+```bash
+corepack pnpm install --frozen-lockfile
+corepack pnpm lint
+corepack pnpm test
+corepack pnpm --filter cms build
+docker compose -f docker-compose.dev.yml config
+docker compose -f docker-compose.prod.yml config
+```
+
+### Actions attendues de l'utilisateur
+
+1. Renseigner `.env` (ne pas coller les valeurs dans le chat).
+2. Créer les rôles Discord Aniimo et GOALS puis renseigner `ROLE_ANIIMO_ID` / `ROLE_GOALS_ID`.
+3. Confirmer l'ID du salon `#bot-test` (`652684137957818378` par défaut).
+4. Après validation : `pnpm deploy` et `pnpm send:roles` dans `#bot-test`.

@@ -1,3 +1,6 @@
 node_modules/
 backup/
+cms/node_modules/
+cms/.next/
 package-lock.json
+pnpm-lock.yaml

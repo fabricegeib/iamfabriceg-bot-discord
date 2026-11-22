@@ -1,0 +1,42 @@
+{
+  "name": "cms",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Payload CMS v3 pour iamfabriceg Bot (Discord)",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start --port 3001",
+    "lint": "eslint .",
+    "generate:types": "payload generate:types",
+    "generate:importmap": "payload generate:importmap",
+    "payload": "payload",
+    "seed": "tsx src/seed.ts"
+  },
+  "dependencies": {
+    "@payloadcms/db-mongodb": "3.94.1",
+    "@payloadcms/next": "3.94.1",
+    "@payloadcms/richtext-lexical": "3.94.1",
+    "dotenv": "^16.4.7",
+    "graphql": "^16.8.1",
+    "next": "16.4.6",
+    "payload": "3.94.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "sharp": "0.35.4"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@types/node": "^22.19.9",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.16.0",
+    "eslint-config-next": "16.4.6",
+    "tsx": "^4.23.15",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": "^22.23.5 || ^24.22.3 || >=26.13.1"
+  }
+}

@@ -4,17 +4,37 @@ on:
   push:
     branches: [master, main, "build/**", "feat/**", "refactor/**", "chore/**", "security/**"]
   pull_request:
-    branches: [master, main]
+    branches: [master, main, "build/**"]
 
 jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+
       - uses: actions/setup-node@v4
         with:
           node-version: 26
-          cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test -- --test-reporter=spec
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint bot
+        run: pnpm lint
+
+      - name: Test bot
+        run: pnpm test -- --test-reporter=spec
+
+      - name: Lint CMS
+        run: pnpm --filter cms lint
+
+      - name: Build CMS
+        run: pnpm --filter cms build
+        env:
+          DATABASE_URI: mongodb://127.0.0.1:27017/iamfabriceg_bot
+          PAYLOAD_SECRET: ci-build-secret-not-used-at-runtime

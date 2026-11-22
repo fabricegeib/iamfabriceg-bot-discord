@@ -1,15 +1,46 @@
-name: iamfabriceg
+name: iamfabriceg-bot
+
+# Développement : code monté depuis l'hôte, pnpm installé dans chaque conteneur.
+# Démarrage : pnpm docker:dev  (ou docker compose -f docker-compose.dev.yml up -d)
 
 services:
-  discord-bot:
+  mongo:
+    image: mongo:8
+    container_name: iamfabriceg-bot-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - iamfabriceg-bot-mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  bot:
     image: node:26-alpine
-    container_name: iamfabriceg-discord-bot
+    container_name: iamfabriceg-bot-discord
+    depends_on:
+      mongo:
+        condition: service_healthy
     env_file:
       - .env
-    working_dir: /home/node/app
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
+      PAYLOAD_URL: http://cms:3001
+      BOT_WEBHOOK_URL: http://bot:3000
+    working_dir: /app
     volumes:
-      - ./:/home/node/app
-    command: node src/index.js
+      - ./:/app
+      - iamfabriceg-bot-node-modules:/app/node_modules
+    command: >-
+      sh -c "corepack enable && corepack prepare pnpm@10.15.0 --activate &&
+      pnpm install --frozen-lockfile --filter iamfabriceg-bot-discord... &&
+      pnpm dev"
     ports:
       - "3000:3000"
     healthcheck:
@@ -17,5 +48,45 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
-    restart: always
+      start_period: 20s
+    restart: unless-stopped
+
+  cms:
+    image: node:26-alpine
+    container_name: iamfabriceg-bot-cms
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+      PORT: "3001"
+      CMS_PORT: "3001"
+      DATABASE_URI: mongodb://mongo:27017/iamfabriceg_bot
+      PAYLOAD_URL: http://cms:3001
+      BOT_WEBHOOK_URL: http://bot:3000
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - iamfabriceg-bot-cms-node-modules:/app/node_modules
+      - iamfabriceg-bot-cms-next:/app/cms/.next
+    command: >-
+      sh -c "corepack enable && corepack prepare pnpm@10.15.0 --activate &&
+      pnpm install --frozen-lockfile --filter cms... &&
+      pnpm --filter cms dev"
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/api/bot/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+volumes:
+  iamfabriceg-bot-mongo-data:
+  iamfabriceg-bot-node-modules:
+  iamfabriceg-bot-cms-node-modules:
+  iamfabriceg-bot-cms-next:
