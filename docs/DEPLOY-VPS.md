@@ -14,7 +14,8 @@
 - Le domaine `bot.iamfabriceg.xyz` avec un enregistrement **A** vers l’IP du VPS.
 - Les identifiants du registre privé `registry.fabricegeib.com`.
 - Ta **MongoDB existante** : conteneur nommé `mongodb`, image `mongo:8.2.4`, URI
-  `mongodb://xxx:xxx@51.178.39.128:27017/?authSource=admin` (identifiants encodés dans `deploy/.env`).
+  `mongodb://xxx:xxx@mongodb:27017/?authSource=admin` (identifiants encodés dans `deploy/.env`).
+  Ce conteneur doit être attaché au réseau `nginx-proxy-manager` (voir étape 3).
 - L’archive MongoDB `backups/iamfabriceg-bot-2026-11-22.archive.gz`.
 
 Rien d’autre : pas de code source, pas de pnpm, pas de build sur le VPS, pas de nouveau MongoDB.
@@ -26,13 +27,13 @@ Rien d’autre : pas de code source, pas de pnpm, pas de build sur le VPS, pas d
 Ouvre `deploy/.env` et remplace **uniquement** les deux placeholders de la ligne `DATABASE_URI` :
 
 ```dotenv
-DATABASE_URI=mongodb://MONGO_USER:MONGO_PASSWORD@51.178.39.128:27017/iamfabriceg_bot?authSource=admin
+DATABASE_URI=mongodb://MONGO_USER:MONGO_PASSWORD@mongodb:27017/iamfabriceg_bot?authSource=admin
 ```
 
-> ⚠️ **Garde l’hôte `51.178.39.128` dans `DATABASE_URI`.** Ne le remplace pas par `mongodb` :
-> ton conteneur MongoDB n’est pas sur le réseau `nginx-proxy-manager` de la stack, donc ce nom
-> ne se résout pas depuis le bot/CMS. Le nom `mongodb` ne sert que dans `--network container:mongodb`
-> des commandes d’import/test ci-dessous, où le conteneur jetable partage son namespace réseau.
+> ⚠️ **Garde l’hôte `mongodb` dans `DATABASE_URI`** (et non l’IP publique du VPS). C’est le nom du
+> conteneur MongoDB existant, résolu par le DNS Docker à condition qu’il soit attaché au réseau
+> `nginx-proxy-manager` — c’est l’objet de l’étape 3. Le `127.0.0.1` n’est utilisé que dans les
+> commandes d’import/test, où le conteneur jetable partage le namespace réseau de `mongodb`.
 
 - Garde `?authSource=admin` : c’est la base d’authentification de ton instance.
 - Garde `/iamfabriceg_bot` : c’est la base dédiée au bot (les autres bases du VPS ne sont pas touchées).
@@ -73,6 +74,14 @@ docker network ls | grep nginx-proxy-manager
 # S'il est absent :
 docker network create nginx-proxy-manager
 
+# Le conteneur MongoDB doit etre sur le meme réseau que la stack pour que
+# `mongodb:27017` soit résolu (commande idempotente) :
+docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' mongodb \
+  | grep -qx nginx-proxy-manager || docker network connect nginx-proxy-manager mongodb
+
+# Vérification DNS depuis le réseau partagé :
+docker run --rm --network nginx-proxy-manager mongo:8.2.4 sh -c 'getent hosts mongodb'
+
 # Connexion au registre privé :
 docker login registry.fabricegeib.com
 
@@ -80,7 +89,7 @@ docker login registry.fabricegeib.com
 # Le conteneur jetable partage le réseau de ton conteneur `mongodb` :
 # 127.0.0.1:27017 y désigne directement ta MongoDB, sans port public.
 docker run --rm --network container:mongodb --env-file .env mongo:8.2.4 sh -c \
-  'MONGO_URI=$(printf "%s" "$DATABASE_URI" | sed "s#51.178.39.128#127.0.0.1#"); mongosh "$MONGO_URI" --quiet --eval "printjson(db.adminCommand({ping:1}))"'
+  'MONGO_URI=$(printf "%s" "$DATABASE_URI" | sed "s#@mongodb:27017#@127.0.0.1:27017#"); mongosh "$MONGO_URI" --quiet --eval "printjson(db.adminCommand({ping:1}))"'
 ```
 
 > Si ton conteneur MongoDB porte un autre nom, remplace `mongodb` après `container:` dans toutes
@@ -131,11 +140,11 @@ docker run --rm \
   --env-file .env \
   -v "$PWD/iamfabriceg-bot-2026-11-22.archive.gz:/backup/archive.gz:ro" \
   mongo:8.2.4 sh -c \
-  'MONGO_URI=$(printf "%s" "$DATABASE_URI" | sed "s#51.178.39.128#127.0.0.1#"); mongorestore --uri="$MONGO_URI" --archive=/backup/archive.gz --gzip --drop'
+  'MONGO_URI=$(printf "%s" "$DATABASE_URI" | sed "s#@mongodb:27017#@127.0.0.1:27017#"); mongorestore --uri="$MONGO_URI" --archive=/backup/archive.gz --gzip --drop'
 
 # Contrôle rapide, toujours dans ton conteneur MongoDB :
 docker run --rm --network container:mongodb --env-file .env mongo:8.2.4 sh -c \
-  'MONGO_URI=$(printf "%s" "$DATABASE_URI" | sed "s#51.178.39.128#127.0.0.1#"); mongosh "$MONGO_URI" --quiet --eval "printjson({collections:db.getCollectionNames().length, users:db.users.countDocuments({}), games:db.games.countDocuments({})})"'
+  'MONGO_URI=$(printf "%s" "$DATABASE_URI" | sed "s#@mongodb:27017#@127.0.0.1:27017#"); mongosh "$MONGO_URI" --quiet --eval "printjson({collections:db.getCollectionNames().length, users:db.users.countDocuments({}), games:db.games.countDocuments({})})"'
 ```
 
 > ⚠️ `--drop` **remplace les collections de la base `iamfabriceg_bot` uniquement**. Vérifie que
@@ -187,8 +196,8 @@ Onglet **SSL** :
 
 **Save.** Attends la délivrance du certificat (quelques secondes).
 
-> NPM et la stack partagent le réseau `nginx-proxy-manager` : le nom `cms` est résolu par Docker,
-> aucune IP n’est à renseigner.
+> NPM et la stack partagent le réseau `nginx-proxy-manager` : le nom `iamfabriceg-bot-cms` est résolu
+> par Docker, aucune IP n’est à renseigner.
 
 ---
 
@@ -247,14 +256,14 @@ Retour arrière : remettre `1.1.0` à la place de `1.1.0-slim`, puis relancer le
 
 | Symptôme | Correctif |
 |---|---|
-| `Authentication failed` sur MongoDB | Vérifier identifiants, `authSource=admin` et encodage des caractères spéciaux, puis `up -d --force-recreate bot cms` |
+| `Authentication failed` sur MongoDB | Vérifier identifiants, `authSource=admin` et encodage des caractères spéciaux, puis `up -d --force-recreate iamfabriceg-bot iamfabriceg-bot-cms` |
 | `No such container: mongodb` | `docker ps --format '{{.Names}}'` puis corriger le `--network container:...` (étapes 3 et 5) |
 | `ECONNREFUSED` sur l’import | Le conteneur ciblé n’écoute pas sur `27017` ; vérifier son nom et son port avec `docker ps` |
 | `unauthorized: authentication required` au `pull` | `docker login registry.fabricegeib.com` |
 | `network nginx-proxy-manager not found` | `docker network create nginx-proxy-manager` |
 | 502 dans NPM | Vérifier `Forward Hostname = iamfabriceg-bot-cms` et `Port = 3001`, puis reload du Proxy Host |
-| Admin : spinner infini sur les POST | `DEPLOY_URL` doit être l’URL publique HTTPS ; `docker compose up -d --force-recreate cms` |
-| Bot « non configuré » pour une API | Clé absente du `.env` ; compléter puis `up -d --force-recreate bot` |
+| Admin : spinner infini sur les POST | `DEPLOY_URL` doit être l’URL publique HTTPS ; `docker compose up -d --force-recreate iamfabriceg-bot-cms` |
+| Bot « non configuré » pour une API | Clé absente du `.env` ; compléter puis `up -d --force-recreate iamfabriceg-bot` |
 | Stats vides | Import MongoDB manquant : rejouer l’étape 5 puis `restart iamfabriceg-bot iamfabriceg-bot-cms` |
 | Palette au 2ᵉ tap sur iPhone | Vérifier le digest CMS `ca7c312e…` (`1.1.0-slim`) |
 | Cercles rouges / safe areas | Retirer puis rajouter la web app depuis l’écran d’accueil iOS |
@@ -267,5 +276,5 @@ Retour arrière : remettre `1.1.0` à la place de `1.1.0-slim`, puis relancer le
 - `RIOT_API_KEY` reste **vide** en prod tant qu’une Production API Key n’est pas approuvée.
 - Twitch : OAuth Redirect `http://localhost` suffit ; callback EventSub public :
   `https://bot.iamfabriceg.xyz/webhooks/twitch`.
-- Ne pas relancer `cms-seed` après l’import MongoDB.
+- Ne pas relancer `iamfabriceg-bot-cms-seed` après l’import MongoDB.
 - Changer le mot de passe admin au premier login et conserver le compte `bot`.

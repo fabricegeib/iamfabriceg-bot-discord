@@ -37,6 +37,7 @@ soit `iamfabriceg Bot` (affichage), soit `iamfabriceg-bot-` (technique).
 | `botSettings.botName` | `iamfabriceg Bot` | Valeur par défaut du global Payload |
 | `service` du `/healthz` bot | `iamfabriceg-bot` | Identifiant machine lisible |
 | Titre du front public | `iamfabriceg Bot` | Metadata Next.js |
+| Hôte MongoDB (VPS) | `mongodb:27017` | Nom du conteneur existant, attaché à `nginx-proxy-manager` |
 | Ports hôtes du projet | `31000` bot, `31001` CMS, `31017` Mongo local | Communs local / Docker / VPS |
 | URL locale bot | `http://127.0.0.1:31000` | — |
 | URL locale CMS | `http://127.0.0.1:31001` | Admin `/admin`, front `/` |

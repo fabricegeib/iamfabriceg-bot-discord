@@ -26,7 +26,8 @@ services:
       # conteneur et le healthcheck 127.0.0.1 échoue alors que le port public répond.
       HOSTNAME: "0.0.0.0"
       PORT: "3000"
-      # DATABASE_URI vient du .env : MongoDB externe, aucune surcharge ici.
+      # DATABASE_URI vient du .env : mongodb:27017 (conteneur existant sur le
+      # réseau nginx-proxy-manager), aucune surcharge ici.
       PAYLOAD_URL: http://iamfabriceg-bot-cms:3001
       PAYLOAD_PUBLIC_URL: ${DEPLOY_URL:-https://bot.iamfabriceg.xyz}
       # Callback public Twitch EventSub : DEPLOY_URL/webhooks/twitch
@@ -56,7 +57,8 @@ services:
       HOSTNAME: "0.0.0.0"
       PORT: "3001"
       CMS_PORT: "3001"
-      # DATABASE_URI vient du .env : MongoDB externe, aucune surcharge ici.
+      # DATABASE_URI vient du .env : mongodb:27017 (conteneur existant sur le
+      # réseau nginx-proxy-manager), aucune surcharge ici.
       PAYLOAD_URL: http://iamfabriceg-bot-cms:3001
       PAYLOAD_PUBLIC_URL: ${DEPLOY_URL:-https://bot.iamfabriceg.xyz}
       PUBLIC_URL: ${DEPLOY_URL:-https://bot.iamfabriceg.xyz}
